@@ -15,6 +15,7 @@ import com.simon.armas_springboot_api.security.repositories.RoleRepository;
 import com.simon.armas_springboot_api.services.UserService;
 import com.simon.armas_springboot_api.dto.PasswordResetRequest;
 import org.springframework.http.HttpStatus;
+import java.security.Principal;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +69,15 @@ public class UserController {
             .map(userService::convertToDTO) // Use userService.convertToDTO
             .collect(Collectors.toList());
     }
-
+    @GetMapping("/me")
+    @PreAuthorize("hasAnyRole('SENIOR_AUDITOR', 'APPROVER', 'ARCHIVER', 'ADMIN', 'USER')")
+    public ResponseEntity<UserDTO> getCurrentUser(Principal principal) {
+        User user = userService.getUserByUsername(principal.getName());
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        return ResponseEntity.ok(userService.convertToDTO(user));
+    }
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public UserDTO getUserById(@PathVariable Long id) {

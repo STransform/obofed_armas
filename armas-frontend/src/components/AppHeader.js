@@ -15,6 +15,7 @@ import { AppSidebarNav } from './AppSidebarNav';
 import { AppHeaderDropdown } from './header/index';
 import NotificationDropdown from './NotificationDropdown';
 import Nav from '../_nav';
+import { useAuth } from '../views/pages/AuthProvider';
 import './AppHeader.css';
 import logo from '../assets/images/mofed.png';
 
@@ -22,6 +23,24 @@ const AppHeader = () => {
   const headerRef = useRef();
   const dispatch = useDispatch();
   const sidebarShow = useSelector((state) => state.sidebarShow);
+  const { user } = useAuth();
+
+  // Debugging: Log user object details
+  useEffect(() => {
+    console.log('User from useAuth:', user);
+    if (user) {
+      console.log('User details:', {
+        username: user.username,
+        orgname: user.orgname,
+        organization: user.organization,
+      });
+    } else {
+      console.log('No user logged in');
+    }
+  }, [user]);
+
+  // Determine organization name to display
+  const orgName = user?.orgname || user?.organization?.orgname || 'No Organization';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -43,21 +62,25 @@ const AppHeader = () => {
         </CHeaderToggler>
         <CHeaderNav className="d-flex align-items-center">
           <CNavItem className="d-md-flex align-items-center">
-            <img src={logo} alt="IRMS Logo"  style={{
-      width: "80px",
-      height: "80px",
-      borderRadius: "50%",
-      objectFit: "cover",
-      backgroundColor: "white",
-      padding: "5px"
-    }} className="header-logo me-2 " />
+            <img
+              src={logo}
+              alt="IRMS Logo"
+              style={{
+                width: '80px',
+                height: '80px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                backgroundColor: 'white',
+                padding: '5px',
+              }}
+              className="header-logo me-2"
+            />
             <CNavLink to="/" as={NavLink} className="navbar-brand">
-              {/* IRMS */}
+              IRMS {user ? `- ${orgName}` : ''} {/* Display orgname or fallback */}
             </CNavLink>
           </CNavItem>
           <AppSidebarNav items={Nav()} isHorizontal />
         </CHeaderNav>
-        
         <CHeaderNav className="ms-auto d-flex align-items-center">
           <CNavItem className="notification-container">
             <NotificationDropdown />

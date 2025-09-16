@@ -29,14 +29,24 @@ import { useAuth } from './views/pages/AuthProvider';
 const Nav = () => {
   const { roles = [] } = useAuth(); // Default to empty array if roles is undefined
 
-  // Safe role checking functions
-  const hasRole = (role) => Array.isArray(roles) && roles.includes(role);
+  // Debug roles
+  console.log('Roles in Nav:', roles);
+
+  // Safe role checking function
+  const hasRole = (role) => {
+    const result = Array.isArray(roles) && roles.some((r) => r.description === role);
+    console.log(`Checking role ${role}: ${result}`);
+    return result;
+  };
+
   const isAdmin = hasRole('ADMIN');
   const isUser = hasRole('USER');
   const isSeniorAuditor = hasRole('SENIOR_AUDITOR');
   const isArchiver = hasRole('ARCHIVER');
   const isApprover = hasRole('APPROVER');
   const isManager = hasRole('MANAGER');
+
+  console.log('Role checks:', { isAdmin, isUser, isSeniorAuditor, isArchiver, isApprover, isManager });
 
   const commonItems = [
     {
@@ -66,12 +76,6 @@ const Nav = () => {
       to: '/file-history',
       icon: <CIcon icon={cilCloudUpload} customClassName="nav-icon" />,
     },
-    // {
-    //     component: CNavItem,
-    //     name: 'Get Document',
-    //     to: '/transactions/letters?type=dispatched', // Filter for dispatched letters
-    //     icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
-    // },
   ];
 
   const managerItems = [
@@ -151,7 +155,7 @@ const Nav = () => {
     },
   ];
 
- const UploadToOrganizationsItem = (isApprover)
+  const UploadToOrganizationsItem = isApprover
     ? [
         {
           component: CNavItem,
@@ -161,6 +165,7 @@ const Nav = () => {
         },
       ]
     : [];
+
   const transactionItems = [
     {
       component: CNavGroup,
@@ -175,22 +180,21 @@ const Nav = () => {
                 to: '/buttons/file-download',
                 icon: <CIcon icon={cilCloudDownload} customClassName="nav-icon" />,
               },
-               {
+              {
                 component: CNavItem,
                 name: 'Approved Reports',
                 to: '/transactions/approved-reports',
                 icon: <CIcon icon={cilCloudDownload} customClassName="nav-icon" />,
               },
               {
-                        component: CNavItem,
-                        name: 'Pending Reports',
-                        to: '/transactions/pending-reports',
-                        icon: <CIcon icon={cilTask} customClassName="nav-icon" />,
-                    },
-             
+                component: CNavItem,
+                name: 'Pending Reports',
+                to: '/transactions/pending-reports',
+                icon: <CIcon icon={cilTask} customClassName="nav-icon" />,
+              },
             ]
           : []),
-        ...((isSeniorAuditor || isApprover)
+        ...(isSeniorAuditor || isApprover
           ? [
               {
                 component: CNavItem,
@@ -228,8 +232,7 @@ const Nav = () => {
     },
   ];
 
-  // Advanced Filters as a standalone item for ADMIN, APPROVER, ARCHIVER, or SENIOR_AUDITOR
-  const advancedFiltersItem = (isAdmin || isApprover || isArchiver || isSeniorAuditor)
+  const advancedFiltersItem = isAdmin || isApprover || isArchiver || isSeniorAuditor
     ? [
         {
           component: CNavItem,
@@ -245,10 +248,12 @@ const Nav = () => {
     ...(isUser ? userItems : []),
     ...(isManager ? managerItems : []),
     ...(isAdmin ? adminItems : []),
-    ...((isArchiver || isSeniorAuditor || isApprover) ? transactionItems : []),
+    ...(isArchiver || isSeniorAuditor || isApprover ? transactionItems : []),
     ...advancedFiltersItem,
     ...UploadToOrganizationsItem,
   ];
+
+  console.log('Navigation items:', navItems);
 
   return navItems;
 };

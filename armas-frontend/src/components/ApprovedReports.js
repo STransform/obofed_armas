@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   CCard,
@@ -94,7 +93,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 
 const ApprovedReports = () => {
   const { roles } = useAuth();
-  const isArchiver = roles.includes('ARCHIVER');
   const [reports, setReports] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -109,8 +107,18 @@ const ApprovedReports = () => {
   const [modalError, setModalError] = useState('');
   const [anchorEl, setAnchorEl] = useState(null);
 
+  // Role checking function
+  const hasRole = (role) => {
+    const result = Array.isArray(roles) && roles.some((r) => r.description === role);
+    console.log(`ApprovedReports: Checking role ${role}: ${result}`);
+    return result;
+  };
+
+  const isArchiver = hasRole('ARCHIVER');
+
   useEffect(() => {
-    console.log('ApprovedReports: Component mounted');
+    console.log('ApprovedReports: User roles:', roles);
+    console.log('ApprovedReports: isArchiver:', isArchiver);
     const fetchReports = async () => {
       setLoading(true);
       try {
@@ -132,9 +140,7 @@ const ApprovedReports = () => {
       }
     };
     fetchReports();
-  }, []);
-
-
+  }, [roles]);
 
   const handleDownload = useCallback(async (id, filename, type = 'supporting') => {
     try {
@@ -229,9 +235,6 @@ const ApprovedReports = () => {
     setAnchorEl(null);
   };
 
-
-
-
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.text('Approved Reports', 14, 20);
@@ -309,8 +312,6 @@ const ApprovedReports = () => {
     });
     handleExportMenuClose();
   };
-
-
 
   const exportToExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(filteredReports.map(report => ({
@@ -406,8 +407,6 @@ const ApprovedReports = () => {
                             borderRadius: '8px',
                           },
                         }}
-
-
                       >
                         <MenuItem onClick={exportToPDF}>Export to PDF</MenuItem>
                         <MenuItem onClick={exportToWord}>Export to Word</MenuItem>
@@ -424,8 +423,6 @@ const ApprovedReports = () => {
                           <StyledTableCell>Organization</StyledTableCell>
                           <StyledTableCell>Budget Year</StyledTableCell>
                           <StyledTableCell>Report Type</StyledTableCell>
-                          {/* <StyledTableCell>Auditor</StyledTableCell>
-                          <StyledTableCell>Response</StyledTableCell> */}
                           <StyledTableCell>Status</StyledTableCell>
                           <StyledTableCell align="right">Action</StyledTableCell>
                         </StyledTableRow>
@@ -443,8 +440,6 @@ const ApprovedReports = () => {
                               <StyledTableCell>{report.orgname || 'N/A'}</StyledTableCell>
                               <StyledTableCell>{report.fiscalYear || 'N/A'}</StyledTableCell>
                               <StyledTableCell>{report.reportype || 'N/A'}</StyledTableCell>
-                              {/* <StyledTableCell>{report.submittedByAuditorUsername || 'N/A'}</StyledTableCell>
-                              <StyledTableCell>{report.responseNeeded || 'N/A'}</StyledTableCell> */}
                               <StyledTableCell>
                                 <Box
                                   sx={{
@@ -474,8 +469,6 @@ const ApprovedReports = () => {
                                         <VisibilityIcon />
                                       </IconButton>
                                       <Typography variant="caption" sx={{ ml: 0.5, fontSize: '0.8rem' }}>
-
-
                                         Details
                                       </Typography>
                                     </Box>
@@ -507,7 +500,7 @@ const ApprovedReports = () => {
                                       </StyledButton>
                                     </Tooltip>
                                   )}
-                                  {isArchiver && report.letterDocname && (
+                                  {isArchiver && report.reportstatus === 'Approved' && report.letterDocname && (
                                     <Tooltip title="Download Letter">
                                       <StyledButton
                                         variant="outlined"
@@ -521,7 +514,7 @@ const ApprovedReports = () => {
                                       </StyledButton>
                                     </Tooltip>
                                   )}
-                                  {isArchiver && !report.letterDocname && (
+                                  {isArchiver && report.reportstatus === 'Approved' && !report.letterDocname && (
                                     <Tooltip title="Send Letter">
                                       <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
                                         <IconButton
@@ -546,8 +539,6 @@ const ApprovedReports = () => {
                     </Table>
                   ) : (
                     <Typography sx={{ p: 2, textAlign: 'center' }}>
-
-
                       No reports found.
                     </Typography>
                   )}
@@ -662,8 +653,6 @@ const ApprovedReports = () => {
             </Box>
             <Box>
               <Typography variant="subtitle2">Created By</Typography>
-
-
               <TextField
                 fullWidth
                 value={selectedReport?.createdBy || 'N/A'}
@@ -729,7 +718,7 @@ const ApprovedReports = () => {
                 >
                   Download Letter
                 </StyledButton>
-              ) : isArchiver ? (
+              ) : isArchiver && selectedReport?.reportstatus === 'Approved' ? (
                 <StyledButton
                   variant="outlined"
                   size="small"
@@ -752,8 +741,6 @@ const ApprovedReports = () => {
           </StyledButton>
         </DialogActions>
       </StyledDialog>
-
-
 
       {/* Letter Upload Dialog */}
       <StyledDialog

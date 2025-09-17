@@ -1,3 +1,4 @@
+// AuditorTasks.jsx
 import React, { useEffect, useState } from 'react';
 import {
   CCard,
@@ -52,7 +53,7 @@ import 'jspdf-autotable';
 import { Document, Packer, Paragraph, Table as DocxTable, TableRow as DocxTableRow, TableCell as DocxTableCell, WidthType } from 'docx';
 import * as XLSX from 'xlsx';
 
-// Styled components for enhanced UI (unchanged)
+// Styled components (unchanged)
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   borderRadius: '8px',
   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
@@ -118,21 +119,29 @@ export default function AuditorTasks() {
   const [selectedApprover, setSelectedApprover] = useState('');
   const [anchorEl, setAnchorEl] = useState(null);
 
-  const isSeniorAuditor = roles.includes('SENIOR_AUDITOR');
-  const isApprover = roles.includes('APPROVER');
+  // Role checking function to match Nav
+  const hasRole = (role) => {
+    const result = Array.isArray(roles) && roles.some((r) => r.description === role);
+    console.log(`AuditorTasks: Checking role ${role}: ${result}`);
+    return result;
+  };
+
+  const isSeniorAuditor = hasRole('SENIOR_AUDITOR');
+  const isApprover = hasRole('APPROVER');
 
   const fetchMyTasks = async () => {
     setLoading(true);
     try {
       const data = await getMyTasks();
+      console.log('AuditorTasks: Tasks fetched:', data);
       let filteredTasks;
       if (isSeniorAuditor) {
         filteredTasks = data.filter(task =>
-          ['Assigned', 'Rejected', 'Under Review', 'Corrected'].includes(task.reportstatus)
+          ['Assigned', 'Rejected'].includes(task.reportstatus)
         );
       } else if (isApprover) {
         filteredTasks = data.filter(task =>
-          ['Under Review', 'Corrected', 'Rejected'].includes(task.reportstatus)
+          ['Under Review', 'Corrected'].includes(task.reportstatus)
         );
       } else {
         filteredTasks = [];
@@ -141,6 +150,8 @@ export default function AuditorTasks() {
       setLoading(false);
       if (filteredTasks.length === 0) {
         setError('No tasks available for your role.');
+      } else {
+        setError(null);
       }
     } catch (error) {
       const errorMessage = error.response
@@ -148,12 +159,14 @@ export default function AuditorTasks() {
             error.response.data?.message || error.response.data || error.response.statusText
           }`
         : error.message;
+      console.error('AuditorTasks: Error fetching tasks:', errorMessage);
       setError(errorMessage);
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    console.log('AuditorTasks: User roles:', roles);
     fetchMyTasks();
   }, [roles]);
 
@@ -555,7 +568,6 @@ export default function AuditorTasks() {
                       <TableHead>
                         <StyledTableRow>
                           <StyledTableCell>Date</StyledTableCell>
-                          {/* Conditionally render Status and Budget Year only for Senior Auditor */}
                           {!isApprover && <StyledTableCell>Status</StyledTableCell>}
                           <StyledTableCell>Organization</StyledTableCell>
                           {!isApprover && <StyledTableCell>Budget Year</StyledTableCell>}
@@ -574,7 +586,6 @@ export default function AuditorTasks() {
                                   ? new Date(task.createdDate).toLocaleDateString()
                                   : 'N/A'}
                               </StyledTableCell>
-                              {/* Conditionally render Status and Budget Year only for Senior Auditor */}
                               {!isApprover && (
                                 <StyledTableCell>
                                   <Box
@@ -754,7 +765,7 @@ export default function AuditorTasks() {
         </CCol>
       </CRow>
 
-      {/* Findings/Rejection Modal (unchanged) */}
+      {/* Findings/Rejection Modal */}
       <StyledDialog
         maxWidth="md"
         fullWidth
@@ -864,7 +875,7 @@ export default function AuditorTasks() {
         </DialogActions>
       </StyledDialog>
 
-      {/* Approval Modal (unchanged) */}
+      {/* Approval Modal */}
       <StyledDialog
         maxWidth="md"
         fullWidth
@@ -898,7 +909,7 @@ export default function AuditorTasks() {
         </DialogActions>
       </StyledDialog>
 
-      {/* Details Modal (unchanged) */}
+      {/* Details Modal */}
       <StyledDialog
         maxWidth="md"
         fullWidth

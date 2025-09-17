@@ -14,18 +14,26 @@ const PendingReports = () => {
     const [selectedAuditor, setSelectedAuditor] = useState('');
     const [auditors, setAuditors] = useState([]);
 
-    const isArchiver = roles.includes('ARCHIVER');
+    // Role checking function
+    const hasRole = (role) => {
+        const result = Array.isArray(roles) && roles.some((r) => r.description === role);
+        console.log(`PendingReports: Checking role ${role}: ${result}`);
+        return result;
+    };
+
+    const isArchiver = hasRole('ARCHIVER');
 
     const fetchPendingTasks = async () => {
         if (!isArchiver) {
             setError('Unauthorized access. ARCHIVER role required.');
+            console.log('PendingReports: Unauthorized access - ARCHIVER role not found');
             return;
         }
         try {
-            console.log('Fetching tasks assigned by ARCHIVER');
+            console.log('PendingReports: Fetching tasks assigned by ARCHIVER');
             const data = await getMyTasks();
             const assignedTasks = data.filter(task => task && task.id && ['Assigned', 'Rejected'].includes(task.reportstatus));
-            console.log('Filtered tasks:', JSON.stringify(assignedTasks, null, 2));
+            console.log('PendingReports: Filtered tasks:', JSON.stringify(assignedTasks, null, 2));
             setTasks(assignedTasks);
             setError('');
             if (assignedTasks.length === 0) {
@@ -34,11 +42,13 @@ const PendingReports = () => {
         } catch (err) {
             const errorMessage = err.message || 'Unknown error';
             setError(`Failed to load pending tasks: ${errorMessage}`);
-            console.error('Fetch error:', err.response?.data || err);
+            console.error('PendingReports: Fetch error:', err.response?.data || err);
         }
     };
 
     useEffect(() => {
+        console.log('PendingReports: User roles:', roles);
+        console.log('PendingReports: isArchiver:', isArchiver);
         fetchPendingTasks();
     }, [roles]);
 
@@ -48,13 +58,13 @@ const PendingReports = () => {
         setSelectedAuditor('');
         try {
             const auditorsData = await getUsersByRole('SENIOR_AUDITOR');
-            console.log('Auditors fetched:', auditorsData);
+            console.log('PendingReports: Auditors fetched:', auditorsData);
             setAuditors(auditorsData);
             setShowReassignModal(true);
         } catch (err) {
             const errorMessage = err.message || 'Unknown error';
             setError(`Failed to load auditors: ${errorMessage}`);
-            console.error('Error fetching auditors:', err.response?.data || err);
+            console.error('PendingReports: Error fetching auditors:', err.response?.data || err);
         }
     };
 
@@ -73,7 +83,7 @@ const PendingReports = () => {
         } catch (err) {
             const errorMessage = err.message || 'Unknown error';
             setError(`Failed to reassign task: ${errorMessage}`);
-            console.error('Reassign error:', err.response?.data || err);
+            console.error('PendingReports: Reassign error:', err.response?.data || err);
             setTimeout(() => setError(''), 5000);
         }
     };

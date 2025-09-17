@@ -117,13 +117,13 @@ public interface MasterTransactionRepository extends JpaRepository<MasterTransac
     List<MasterTransaction> findTasksAssignedByArchiver(@Param("userId") Long userId);
 
     @Query("SELECT m FROM MasterTransaction m " +
-           "LEFT JOIN FETCH m.user " +
-           "LEFT JOIN FETCH m.organization " +
-           "LEFT JOIN FETCH m.user2 " +
-           "LEFT JOIN FETCH m.transactiondocument " +
-           "LEFT JOIN FETCH m.assignedBy " +
-           "WHERE m.user2.id = :userId AND m.reportstatus IN ('Assigned', 'Rejected') ORDER BY m.createdDate DESC")
-    List<MasterTransaction> findActiveSeniorAuditorTasks(@Param("userId") Long userId);
+       "LEFT JOIN FETCH m.user " +
+       "LEFT JOIN FETCH m.organization " +
+       "LEFT JOIN FETCH m.user2 " +
+       "LEFT JOIN FETCH m.transactiondocument " +
+       "LEFT JOIN FETCH m.assignedBy " +
+       "WHERE m.user2.id = :userId AND m.reportstatus = 'Assigned' ORDER BY m.createdDate DESC")
+List<MasterTransaction> findActiveSeniorAuditorTasks(@Param("userId") Long userId);
 
     @Query("SELECT m FROM MasterTransaction m " +
            "LEFT JOIN FETCH m.user " +

@@ -30,12 +30,12 @@ const Nav = () => {
   const { roles = [] } = useAuth(); // Default to empty array if roles is undefined
 
   // Debug roles
-  console.log('Roles in Nav:', roles);
+  console.log('Nav: Roles:', roles);
 
   // Safe role checking function
   const hasRole = (role) => {
     const result = Array.isArray(roles) && roles.some((r) => r.description === role);
-    console.log(`Checking role ${role}: ${result}`);
+    console.log(`Nav: Checking role ${role}: ${result}`);
     return result;
   };
 
@@ -46,16 +46,9 @@ const Nav = () => {
   const isApprover = hasRole('APPROVER');
   const isManager = hasRole('MANAGER');
 
-  console.log('Role checks:', { isAdmin, isUser, isSeniorAuditor, isArchiver, isApprover, isManager });
+  console.log('Nav: Role checks:', { isAdmin, isUser, isSeniorAuditor, isArchiver, isApprover, isManager });
 
-  const commonItems = [
-    {
-      component: CNavItem,
-      name: 'IRMS',
-      to: '/charts',
-      icon: <CIcon icon={cilChartPie} customClassName="nav-icon" />,
-    },
-  ];
+  const commonItems = []; // Removed the IRMS item to avoid redundancy
 
   const userItems = [
     {
@@ -253,7 +246,7 @@ const Nav = () => {
     ...UploadToOrganizationsItem,
   ];
 
-  console.log('Navigation items:', navItems);
+  console.log('Nav: Navigation items:', navItems);
 
   return navItems;
 };

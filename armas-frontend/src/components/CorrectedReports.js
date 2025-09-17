@@ -89,8 +89,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 
 export default function CorrectedReports() {
   const { roles } = useAuth();
-  const isApprover = roles.includes('APPROVER');
-  const isSeniorAuditor = roles.includes('SENIOR_AUDITOR');
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -108,10 +106,27 @@ export default function CorrectedReports() {
   const [rejectionDocument, setRejectionDocument] = useState(null);
   const [approvalDocument, setApprovalDocument] = useState(null);
 
+  // Role checking function
+  const hasRole = (role) => {
+    const result = Array.isArray(roles) && roles.some((r) => r.description === role);
+    console.log(`CorrectedReports: Checking role ${role}: ${result}`);
+    return result;
+  };
+
+  const isApprover = hasRole('APPROVER');
+  const isSeniorAuditor = hasRole('SENIOR_AUDITOR');
+
+  useEffect(() => {
+    console.log('CorrectedReports: User roles:', roles);
+    console.log('CorrectedReports: isApprover:', isApprover, 'isSeniorAuditor:', isSeniorAuditor);
+    fetchReports();
+  }, [roles]);
+
   const fetchReports = async () => {
     setLoading(true);
     try {
       const data = await getCorrectedReports();
+      console.log('CorrectedReports: Fetched reports:', data);
       setReports(Array.isArray(data) ? data : []);
       setLoading(false);
       if (data.length === 0) {
@@ -123,14 +138,11 @@ export default function CorrectedReports() {
             error.response.data?.message || error.response.data || error.response.statusText
           }`
         : error.message;
+      console.error('CorrectedReports: Fetch error:', errorMessage);
       setError(errorMessage);
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchReports();
-  }, []);
 
   const handleDownload = async (id, docname, supportingDocname, type) => {
     try {
@@ -177,6 +189,7 @@ export default function CorrectedReports() {
       await fetchReports();
     } catch (error) {
       const msg = error.response?.data || 'Error approving report';
+      console.error('CorrectedReports: Approve error:', msg);
       setSnackbarMessage(msg);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
@@ -209,6 +222,7 @@ export default function CorrectedReports() {
       await fetchReports();
     } catch (error) {
       const msg = error.response?.data || 'Error rejecting report';
+      console.error('CorrectedReports: Reject error:', msg);
       setSnackbarMessage(msg);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
@@ -216,6 +230,7 @@ export default function CorrectedReports() {
   };
 
   const handleOpenDetails = (report) => {
+    console.log('CorrectedReports: Selected report for details:', report);
     setSelectedReport(report);
     setShowDetailsModal(true);
   };
@@ -325,7 +340,6 @@ export default function CorrectedReports() {
                               <StyledTableCell>{report.responseNeeded || 'N/A'}</StyledTableCell>
                               <StyledTableCell align="right">
                                 <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', alignItems: 'center' }}>
-                                  {/* View Details Button with Label */}
                                   <Tooltip title="View Details" arrow>
                                     <Box sx={{ display: 'inline-flex', alignItems: 'center', mr: 1 }}>
                                       <IconButton
@@ -341,10 +355,31 @@ export default function CorrectedReports() {
                                       </Typography>
                                     </Box>
                                   </Tooltip>
-
-                                  {isApprover && (
+                                  {(report.supportingDocumentPath || report.docname) && (
+                                    <Tooltip title="Download Documents" arrow>
+                                      <Box sx={{ display: 'inline-flex', alignItems: 'center', mr: 1 }}>
+                                        <IconButton
+                                          color="primary"
+                                          onClick={() => {
+                                            if (report.supportingDocumentPath && report.supportingDocname) {
+                                              handleDownload(report.id, report.docname, report.supportingDocname, 'supporting');
+                                            } else if (report.docname) {
+                                              handleDownload(report.id, report.docname, report.supportingDocname, 'original');
+                                            }
+                                          }}
+                                          aria-label="Download document"
+                                          size="small"
+                                        >
+                                          <DownloadIcon />
+                                        </IconButton>
+                                        <Typography variant="caption" sx={{ ml: 0.5, fontSize: '0.8rem' }}>
+                                          Download
+                                        </Typography>
+                                      </Box>
+                                    </Tooltip>
+                                  )}
+                                  {isApprover && report.reportstatus === 'Corrected' && (
                                     <>
-                                      {/* Approve Button with Label */}
                                       <Tooltip title="Approve Report" arrow>
                                         <Box sx={{ display: 'inline-flex', alignItems: 'center', mr: 1 }}>
                                           <IconButton
@@ -360,8 +395,6 @@ export default function CorrectedReports() {
                                           </Typography>
                                         </Box>
                                       </Tooltip>
-
-                                      {/* Reject Button with Label */}
                                       <Tooltip title="Reject Report" arrow>
                                         <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
                                           <IconButton
@@ -379,8 +412,7 @@ export default function CorrectedReports() {
                                       </Tooltip>
                                     </>
                                   )}
-
-                                  {isSeniorAuditor && !isApprover && (
+                                  {isSeniorAuditor && !isApprover && report.reportstatus === 'Corrected' && (
                                     <Tooltip title="Pending Approval" arrow>
                                       <Typography variant="body2" color="textSecondary">
                                         Awaiting Approval

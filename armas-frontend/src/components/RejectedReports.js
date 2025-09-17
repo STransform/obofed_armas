@@ -93,7 +93,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 
 export default function RejectedReports() {
   const { roles } = useAuth();
-  const isSeniorAuditor = roles.includes('SENIOR_AUDITOR');
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -103,7 +102,8 @@ export default function RejectedReports() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
-  const [showModal, setShowModal] = useState(false);
+  const [showResubmitModal, setShowResubmitModal] = useState(false);
+  const [showEvaluateModal, setShowEvaluateModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [remarks, setRemarks] = useState('');
@@ -112,11 +112,27 @@ export default function RejectedReports() {
   const [approvers, setApprovers] = useState([]);
   const [selectedApprover, setSelectedApprover] = useState('');
 
+  // Role checking function
+  const hasRole = (role) => {
+    const result = Array.isArray(roles) && roles.some((r) => r.description === role);
+    console.log(`RejectedReports: Checking role ${role}: ${result}`);
+    return result;
+  };
+
+  const isSeniorAuditor = hasRole('SENIOR_AUDITOR');
+  const isApprover = hasRole('APPROVER');
+
+  useEffect(() => {
+    console.log('RejectedReports: User roles:', roles);
+    console.log('RejectedReports: isSeniorAuditor:', isSeniorAuditor, 'isApprover:', isApprover);
+    fetchReports();
+  }, [roles]);
+
   const fetchReports = async () => {
     setLoading(true);
     try {
       const data = await getRejectedReports();
-      console.log('Fetched rejected reports:', data);
+      console.log('RejectedReports: Fetched reports:', data);
       setReports(Array.isArray(data) ? data : []);
       setLoading(false);
       if (data.length === 0) {
@@ -128,14 +144,11 @@ export default function RejectedReports() {
             error.response.data?.message || error.response.data || error.response.statusText
           }`
         : error.message;
+      console.error('RejectedReports: Fetch error:', errorMessage);
       setError(errorMessage);
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchReports();
-  }, []);
 
   const handleDownload = async (id, docname, supportingDocname, type) => {
     try {
@@ -172,17 +185,39 @@ export default function RejectedReports() {
     setSelectedApprover('');
     try {
       const approversData = await getUsersByRole('APPROVER');
+      console.log('RejectedReports: Fetched approvers:', approversData);
       setApprovers(Array.isArray(approversData) ? approversData : []);
-      setShowModal(true);
+      setShowResubmitModal(true);
     } catch (error) {
       const msg = error.response?.data || 'Error loading approvers';
+      console.error('RejectedReports: Approvers fetch error:', msg);
       setSnackbarMessage(msg);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     }
   };
 
-  const handleSubmit = async () => {
+  const handleEvaluate = async (report) => {
+    setSelectedReport(report);
+    setRemarks('');
+    setResponseNeeded('Pending');
+    setSupportingDocument(null);
+    setSelectedApprover('');
+    try {
+      const approversData = await getUsersByRole('APPROVER');
+      console.log('RejectedReports: Fetched approvers for evaluate:', approversData);
+      setApprovers(Array.isArray(approversData) ? approversData : []);
+      setShowEvaluateModal(true);
+    } catch (error) {
+      const msg = error.response?.data || 'Error loading approvers';
+      console.error('RejectedReports: Approvers fetch error:', msg);
+      setSnackbarMessage(msg);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
+  };
+
+  const handleResubmitSubmit = async () => {
     if (!remarks || !selectedApprover || !responseNeeded) {
       setSnackbarMessage('Please enter findings, select an approver, and select response needed');
       setSnackbarSeverity('error');
@@ -190,12 +225,12 @@ export default function RejectedReports() {
       return;
     }
     try {
-      const file = document.getElementById('supportingDocument')?.files[0];
+      const file = document.getElementById('resubmitSupportingDocument')?.files[0];
       await submitFindings(selectedReport.id, remarks, selectedApprover, responseNeeded, file);
       setSnackbarMessage('Report resubmitted successfully');
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
-      setShowModal(false);
+      setShowResubmitModal(false);
       setRemarks('');
       setResponseNeeded('Pending');
       setSupportingDocument(null);
@@ -203,6 +238,46 @@ export default function RejectedReports() {
       await fetchReports();
     } catch (error) {
       const msg = error.response?.data || 'Error resubmitting report';
+      console.error('RejectedReports: Resubmit error:', msg);
+      setSnackbarMessage(msg);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
+  };
+
+  const handleEvaluateSubmit = async () => {
+    if (!remarks || !selectedApprover || !responseNeeded) {
+      setSnackbarMessage('Please enter findings, select an approver, and select response needed');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+      return;
+    }
+    try {
+      const file = document.getElementById('evaluateSupportingDocument')?.files[0];
+      const response = await submitFindings(
+        selectedReport.id,
+        remarks,
+        selectedApprover,
+        responseNeeded,
+        file
+      );
+      console.log('RejectedReports: Evaluate submit response:', response);
+      setSnackbarMessage(
+        response.reportstatus === 'Corrected'
+          ? 'Report evaluated successfully and status changed to Corrected'
+          : `Report evaluated, but status is ${response.reportstatus}`
+      );
+      setSnackbarSeverity(response.reportstatus === 'Corrected' ? 'success' : 'warning');
+      setSnackbarOpen(true);
+      setShowEvaluateModal(false);
+      setRemarks('');
+      setResponseNeeded('Pending');
+      setSupportingDocument(null);
+      setSelectedApprover('');
+      await fetchReports();
+    } catch (error) {
+      const msg = error.response?.data?.error || 'Error evaluating report';
+      console.error('RejectedReports: Evaluate submit error:', msg);
       setSnackbarMessage(msg);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
@@ -210,7 +285,7 @@ export default function RejectedReports() {
   };
 
   const handleOpenDetails = (report) => {
-    console.log('Selected Report for Details Modal:', report);
+    console.log('RejectedReports: Selected report for details:', report);
     setSelectedReport(report);
     setShowDetailsModal(true);
   };
@@ -219,8 +294,16 @@ export default function RejectedReports() {
     setShowDetailsModal(false);
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
+  const handleCloseResubmitModal = () => {
+    setShowResubmitModal(false);
+    setRemarks('');
+    setResponseNeeded('Pending');
+    setSupportingDocument(null);
+    setSelectedApprover('');
+  };
+
+  const handleCloseEvaluateModal = () => {
+    setShowEvaluateModal(false);
     setRemarks('');
     setResponseNeeded('Pending');
     setSupportingDocument(null);
@@ -250,7 +333,7 @@ export default function RejectedReports() {
       (report.organization?.orgname || '').toLowerCase().includes(filterText.toLowerCase()) ||
       (report.transactiondocument?.reportype || '').toLowerCase().includes(filterText.toLowerCase()) ||
       (report.fiscalYear || '').toString().toLowerCase().includes(filterText.toLowerCase()) ||
-      (report.submittedByAuditorUsername || report.assignedAuditorUsername || '').toLowerCase().includes(filterText.toLowerCase()) || // Added fallback
+      (report.submittedByAuditorUsername || report.assignedAuditorUsername || '').toLowerCase().includes(filterText.toLowerCase()) ||
       (report.responseNeeded || '').toLowerCase().includes(filterText.toLowerCase()) ||
       (report.reportstatus || '').toLowerCase().includes(filterText.toLowerCase()) ||
       (report.remarks || '').toLowerCase().includes(filterText.toLowerCase())
@@ -378,22 +461,25 @@ export default function RejectedReports() {
                                       Document unavailable
                                     </Typography>
                                   )}
-                                  {isSeniorAuditor && (
-                                    <Tooltip title="Submit" placement="top">
-                                      <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
-                                        <StyledButton
-                                          variant="text"
-                                          color="inherit"
-                                          size="small"
-                                          onClick={() => handleResubmit(report)}
-                                        >
-                                          <AssignmentIcon />
-                                        </StyledButton>
-                                        <Typography variant="caption" sx={{ ml: 0.5, fontSize: '0.8rem' }}>
-                                          Submit
-                                        </Typography>
-                                      </Box>
-                                    </Tooltip>
+                                  {isSeniorAuditor && report.reportstatus === 'Rejected' && (
+                                    <>
+                                     
+                                      <Tooltip title="Evaluate Report">
+                                        <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                                          <StyledButton
+                                            variant="text"
+                                            color="inherit"
+                                            size="small"
+                                            onClick={() => handleEvaluate(report)}
+                                          >
+                                            <AssignmentIcon />
+                                          </StyledButton>
+                                          <Typography variant="caption" sx={{ ml: 0.5, fontSize: '0.8rem' }}>
+                                            Evaluate
+                                          </Typography>
+                                        </Box>
+                                      </Tooltip>
+                                    </>
                                   )}
                                 </Box>
                               </StyledTableCell>
@@ -424,8 +510,8 @@ export default function RejectedReports() {
       <StyledDialog
         maxWidth="md"
         fullWidth
-        open={showModal}
-        onClose={handleCloseModal}
+        open={showResubmitModal}
+        onClose={handleCloseResubmitModal}
         TransitionComponent={Fade}
         TransitionProps={{ timeout: 800 }}
       >
@@ -483,11 +569,11 @@ export default function RejectedReports() {
               </select>
             </CCol>
             <CCol xs={12}>
-              <CFormLabel htmlFor="supportingDocument">Supporting Document (Optional)</CFormLabel>
+              <CFormLabel htmlFor="resubmitSupportingDocument">Supporting Document (Optional)</CFormLabel>
               <input
                 type="file"
                 className="form-control"
-                id="supportingDocument"
+                id="resubmitSupportingDocument"
                 onChange={(e) => setSupportingDocument(e.target.files[0])}
                 style={{ borderRadius: '8px' }}
               />
@@ -495,10 +581,94 @@ export default function RejectedReports() {
           </CForm>
         </DialogContent>
         <DialogActions>
-          <StyledButton onClick={handleCloseModal} color="primary">
+          <StyledButton onClick={handleCloseResubmitModal} color="primary">
             Cancel
           </StyledButton>
-          <StyledButton onClick={handleSubmit} color="primary" variant="contained">
+          <StyledButton onClick={handleResubmitSubmit} color="primary" variant="contained">
+            Submit
+          </StyledButton>
+        </DialogActions>
+      </StyledDialog>
+
+      {/* Evaluate Modal */}
+      <StyledDialog
+        maxWidth="md"
+        fullWidth
+        open={showEvaluateModal}
+        onClose={handleCloseEvaluateModal}
+        TransitionComponent={Fade}
+        TransitionProps={{ timeout: 800 }}
+      >
+        <DialogTitle>Evaluate Report</DialogTitle>
+        <DialogContent>
+          <CForm className="row g-3">
+            <CCol xs={12}>
+              <CFormLabel htmlFor="evaluateRemarks">Audit Findings</CFormLabel>
+              <CFormInput
+                component="textarea"
+                id="evaluateRemarks"
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                placeholder="Enter audit findings"
+                rows={4}
+              />
+            </CCol>
+            <CCol xs={12}>
+              <CFormLabel htmlFor="evaluateResponseNeeded">Response Needed</CFormLabel>
+              <select
+                className="form-control"
+                id="evaluateResponseNeeded"
+                value={responseNeeded}
+                onChange={(e) => setResponseNeeded(e.target.value)}
+                style={{
+                  padding: '8px',
+                  borderRadius: '8px',
+                  border: '1px solid #ccc',
+                }}
+              >
+                <option value="Pending">Pending</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </CCol>
+            <CCol xs={12}>
+              <CFormLabel htmlFor="evaluateApprover">Select Approver</CFormLabel>
+              <select
+                className="form-control"
+                id="evaluateApprover"
+                value={selectedApprover}
+                onChange={(e) => setSelectedApprover(e.target.value)}
+                style={{
+                  padding: '8px',
+                  borderRadius: '8px',
+                  border: '1px solid #ccc',
+                }}
+              >
+                <option value="">Select Approver</option>
+                {approvers.map((approver) => (
+                  <option key={approver.id} value={approver.username}>
+                    {approver.firstName} {approver.lastName} ({approver.username})
+                  </option>
+                ))}
+              </select>
+            </CCol>
+            <CCol xs={12}>
+              <CFormLabel htmlFor="evaluateSupportingDocument">Supporting Document (Optional)</CFormLabel>
+              <input
+                type="file"
+                className="form-control"
+                id="evaluateSupportingDocument"
+                onChange={(e) => setSupportingDocument(e.target.files[0])}
+                style={{ borderRadius: '8px' }}
+              />
+            </CCol>
+          </CForm>
+        </DialogContent>
+        <DialogActions>
+          <StyledButton onClick={handleCloseEvaluateModal} color="primary">
+            Cancel
+          </StyledButton>
+          <StyledButton onClick={handleEvaluateSubmit} color="primary" variant="contained">
             Submit
           </StyledButton>
         </DialogActions>
@@ -547,7 +717,7 @@ export default function RejectedReports() {
             <CCol md={6}>
               <CFormLabel>Auditor</CFormLabel>
               <CFormInput
-                value={selectedReport?.submittedByAuditorUsername || selectedReport?.assignedAuditorUsername || 'N/A'} // Added fallback
+                value={selectedReport?.submittedByAuditorUsername || selectedReport?.assignedAuditorUsername || 'N/A'}
                 readOnly
               />
             </CCol>

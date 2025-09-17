@@ -70,6 +70,7 @@ public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws
             .requestMatchers("/directorates/**").hasRole("ADMIN")
             .requestMatchers("/documents/**").hasRole("ADMIN")
             .requestMatchers("/budgetyears/**").hasRole("ADMIN")
+            .requestMatchers("/me/**").hasAnyRole("ADMIN", "USER", "ARCHIVER", "SENIOR_AUDITOR", "APPROVER")
             .requestMatchers("/budget-years/**").hasAnyRole("ADMIN", "USER", "ARCHIVER", "SENIOR_AUDITOR", "APPROVER")
             .requestMatchers("/master-transactions/**").hasRole("ADMIN")
             .requestMatchers("/userPrivilegeAssignments/**").hasRole("ADMIN")

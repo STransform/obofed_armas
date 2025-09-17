@@ -9,7 +9,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
-    @Query("SELECT u FROM User u JOIN FETCH u.organization o LEFT JOIN FETCH u.directorate d WHERE u.username = :username")
+    // Updated query to fetch roles, organization, and directorate
+    @Query("SELECT u FROM User u JOIN FETCH u.organization o LEFT JOIN FETCH u.directorate d JOIN FETCH u.roles r WHERE u.username = :username")
     User findByUsername(@Param("username") String username);
 
     @Query("SELECT u FROM User u JOIN FETCH u.organization JOIN FETCH u.directorate")

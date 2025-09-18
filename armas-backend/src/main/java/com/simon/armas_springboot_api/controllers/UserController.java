@@ -149,16 +149,25 @@ public ResponseEntity<?> createUser(@RequestBody UserRequest userRequest) {
     }
 }
 
-    @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody User user) {
+  @PutMapping("/{id}")
+@PreAuthorize("hasRole('ADMIN')")
+public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User user) {
+    try {
         UserDTO existingUser = userService.getUserById(id);
-        if (existingUser != null) {
-            user.setId(id);
-            return ResponseEntity.ok(userService.convertToDTO(userService.save(user)));
+        if (existingUser == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found with ID: " + id));
         }
-        return ResponseEntity.notFound().build();
+        user.setId(id);
+        UserDTO updatedUser = userService.convertToDTO(userService.save(user));
+        return ResponseEntity.ok(updatedUser);
+    } catch (IllegalArgumentException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+    } catch (UserAlreadyExistException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Username already exists: " + e.getMessage()));
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Failed to update user: " + e.getMessage()));
     }
+}
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")

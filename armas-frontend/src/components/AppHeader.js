@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -10,7 +10,7 @@ import {
   CNavItem,
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
-import { cilMenu } from '@coreui/icons';
+import { cilMenu, cilBell, cilApplicationsSettings } from '@coreui/icons';
 import { AppSidebarNav } from './AppSidebarNav';
 import { AppHeaderDropdown } from './header/index';
 import NotificationDropdown from './NotificationDropdown';
@@ -24,6 +24,7 @@ const AppHeader = () => {
   const dispatch = useDispatch();
   const sidebarShow = useSelector((state) => state.sidebarShow);
   const { user } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Debugging: Log user object details
   useEffect(() => {
@@ -42,53 +43,57 @@ const AppHeader = () => {
   // Determine organization name to display
   const orgName = user?.orgname || user?.organization?.orgname || 'No Organization';
 
+  // Handle scroll shadow
   useEffect(() => {
     const handleScroll = () => {
-      headerRef.current &&
+      if (headerRef.current) {
         headerRef.current.classList.toggle('shadow-sm', document.documentElement.scrollTop > 0);
+      }
     };
     document.addEventListener('scroll', handleScroll);
     return () => document.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Toggle mobile menu
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+    dispatch({ type: 'set', sidebarShow: !sidebarShow });
+  };
 
   return (
     <CHeader position="sticky" className="p-0 custom-header" ref={headerRef}>
       <CContainer className="border-bottom px-3" fluid>
         <CHeaderToggler
           className="d-md-none"
-          onClick={() => dispatch({ type: 'set', sidebarShow: !sidebarShow })}
+          onClick={toggleMobileMenu}
+          aria-label="Toggle navigation"
+          aria-expanded={isMobileMenuOpen}
         >
           <CIcon icon={cilMenu} size="lg" className="text-white" />
         </CHeaderToggler>
         <CHeaderNav className="d-flex align-items-center">
-          <CNavItem className="d-md-flex align-items-center">
+          <CNavItem className="d-flex align-items-center">
             <img
               src={logo}
               alt="IRMS Logo"
-              style={{
-                width: '80px',
-                height: '80px',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                backgroundColor: 'white',
-                padding: '5px',
-              }}
               className="header-logo me-2"
             />
             <CNavLink to="/" as={NavLink} className="navbar-brand">
-              IRMS {user ? `- ${orgName}` : ''} {/* Display orgname or fallback */}
+              IRMS {user ? `- ${orgName}` : ''}
             </CNavLink>
           </CNavItem>
-          <AppSidebarNav items={Nav()} isHorizontal />
+          <AppSidebarNav items={Nav()} isHorizontal className={isMobileMenuOpen ? 'show' : ''} />
         </CHeaderNav>
         <CHeaderNav className="ms-auto d-flex align-items-center">
           <CNavItem className="notification-container">
-            <NotificationDropdown />
+            <NotificationDropdown icon={cilBell} />
           </CNavItem>
           <CNavItem className="d-none d-md-block">
             <div className="vr h-100 mx-2 text-white opacity-75"></div>
           </CNavItem>
-          <AppHeaderDropdown />
+          <CNavItem className="menu-container">
+            <AppHeaderDropdown icon={cilApplicationsSettings} />
+          </CNavItem>
         </CHeaderNav>
       </CContainer>
     </CHeader>

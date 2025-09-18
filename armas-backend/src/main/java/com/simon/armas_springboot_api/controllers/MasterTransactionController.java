@@ -349,7 +349,6 @@ public ResponseEntity<MasterTransaction> assignApprover(@PathVariable Integer tr
         List<MasterTransaction> reports = masterTransactionRepository.findByReportStatus("Rejected");
         return ResponseEntity.ok(reports);
     }
-    
 
     @GetMapping("/tasks")
     @PreAuthorize("hasAnyRole('ARCHIVER', 'SENIOR_AUDITOR', 'APPROVER')")

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Box,
   Grid,
@@ -10,16 +10,12 @@ import {
   CircularProgress,
   Alert,
   Typography,
-  AppBar,
-  Toolbar,
-  IconButton,
   Drawer,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
   Avatar,
-  Button,
 } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Bar, Pie } from 'react-chartjs-2';
@@ -41,7 +37,6 @@ import {
   PieChart,
   Group,
   Timeline,
-  Menu as MenuIcon,
   Dashboard as DashboardIcon,
 } from '@mui/icons-material';
 import './dashboard.css';
@@ -50,11 +45,11 @@ import 'animate.css';
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip);
 
-// Custom theme to match JSP aesthetic
+// Custom theme (kept unchanged)
 const theme = createTheme({
   palette: {
-    primary: { main: '#013A6B' }, // JSP navbar gradient start
-    secondary: { main: '#00C4B4' }, // Teal for gradient end
+    primary: { main: '#013A6B' },
+    secondary: { main: '#00C4B4' },
     warning: { main: '#ff9800' },
     danger: { main: '#dc3545' },
     success: { main: '#28a745' },
@@ -87,14 +82,14 @@ const theme = createTheme({
         root: {
           textTransform: 'none',
           borderRadius: 6,
-          '&:hover': { backgroundColor: '#FF0000', color: '#fff' }, // JSP red hover
+          '&:hover': { backgroundColor: '#FF0000', color: '#fff' },
         },
       },
     },
   },
 });
 
-// Configure Axios
+// Axios config (kept unchanged)
 axios.defaults.baseURL = 'http://localhost:8080';
 axios.interceptors.request.use(
   (config) => {
@@ -105,7 +100,7 @@ axios.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Gradient for charts
+// Gradient helper (kept)
 const getGradient = (ctx, chartArea, colorStart, colorEnd) => {
   if (!chartArea || !ctx) return colorStart; // Fallback to solid color
   const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
@@ -114,80 +109,244 @@ const getGradient = (ctx, chartArea, colorStart, colorEnd) => {
   return gradient;
 };
 
+// default stats shape (kept same as original)
+const EMPTY_STATS = {
+  totalOrganizations: 0,
+  totalReportTypes: 0,
+  totalDirectorates: 0,
+  totalDocuments: 0,
+  totalUsers: 0,
+  reportTypeStats: {},
+};
+
+// Memoized child for each report type (reduces rerenders & expensive chart prop recreation)
+const ReportTypeCard = React.memo(function ReportTypeCard({ reportType, counts }) {
+  // memoize chart datasets/options per counts so Chart.js props are stable
+  const barData = useMemo(() => ({
+    labels: ['Senders', 'Non-Senders'],
+    datasets: [
+      {
+        label: 'Number of Organizations',
+        backgroundColor: (context) => {
+          const chart = context.chart;
+          const { ctx, chartArea } = chart;
+          if (!chartArea) return ['#013A6B', '#dc3545'];
+          return [
+            getGradient(ctx, chartArea, '#013A6B', '#00C4B4'),
+            getGradient(ctx, chartArea, '#dc3545', '#ff8a65'),
+          ];
+        },
+        data: [counts.senders, counts.nonSenders],
+        borderRadius: 8,
+      },
+    ],
+  }), [counts.senders, counts.nonSenders]);
+
+  const barOptions = useMemo(() => ({
+    maintainAspectRatio: false,
+    plugins: {
+      tooltip: {
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        titleFont: { size: 14 },
+        bodyFont: { size: 12 },
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: { display: true, text: 'Number of Organizations', font: { size: 14 } },
+        grid: { color: '#e0e0e0' },
+      },
+      x: { grid: { display: false } },
+    },
+    animation: { duration: 1000, easing: 'easeOutQuart' }, // preserved animation
+  }), []);
+
+  const pieData = useMemo(() => ({
+    labels: ['Senders', 'Non-Senders'],
+    datasets: [
+      {
+        label: 'Number of Organizations',
+        backgroundColor: (context) => {
+          const chart = context.chart;
+          const { ctx, chartArea } = chart;
+          if (!chartArea) return ['#013A6B', '#dc3545'];
+          return [
+            getGradient(ctx, chartArea, '#013A6B', '#00C4B4'),
+            getGradient(ctx, chartArea, '#dc3545', '#ff8a65'),
+          ];
+        },
+        data: [counts.senders, counts.nonSenders],
+        borderWidth: 1,
+        borderColor: '#fff',
+      },
+    ],
+  }), [counts.senders, counts.nonSenders]);
+
+  const pieOptions = useMemo(() => ({
+    maintainAspectRatio: false,
+    plugins: {
+      tooltip: {
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        titleFont: { size: 14 },
+        bodyFont: { size: 12 },
+      },
+      legend: {
+        display: true,
+        position: 'top',
+        labels: { font: { size: 12 } },
+      },
+    },
+    animation: { duration: 1000, easing: 'easeOutQuart' }, // preserved animation
+  }), []);
+
+  return (
+    <Grid item xs={12} md={12}>
+      <Card className="animate__animated animate__fadeInUp">
+        <CardContent sx={{ bgcolor: 'white', color: 'black', p: 2, borderRadius: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <PieChart sx={{ mr: 1 }} />
+            <Typography variant="h6">{reportType} Senders vs Non-Senders</Typography>
+          </Box>
+        </CardContent>
+        <CardContent sx={{ p: 2 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <Box className="chart-container">
+                <Bar data={barData} options={barOptions} height={300} />
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Box className="chart-container">
+                <Pie data={pieData} options={pieOptions} height={300} />
+              </Box>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+    </Grid>
+  );
+});
+
 const Charts = () => {
   const [budgetYears, setBudgetYears] = useState([]);
   const [selectedFiscalYear, setSelectedFiscalYear] = useState('');
-  const [stats, setStats] = useState({
-    totalOrganizations: 0,
-    totalReportTypes: 0,
-    totalDirectorates: 0,
-    totalDocuments: 0,
-    totalUsers: 0,
-    reportTypeStats: {},
-  });
-  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState(EMPTY_STATS);
+  const [loading, setLoading] = useState(true); // kept single loading flag to preserve behavior
   const [error, setError] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Fetch budget years
+  // cache & cancellation refs (no UI changes, internal only)
+  const statsCacheRef = useRef({});
+  const cancelTokenRef = useRef(null);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      // cancel any in-flight request on unmount
+      if (cancelTokenRef.current) {
+        cancelTokenRef.current.cancel('Component unmounted');
+      }
+    };
+  }, []);
+
+  // Fetch budget years (unchanged logic & error messages)
   useEffect(() => {
     setLoading(true);
     axios
       .get('/transactions/budget-years')
       .then((response) => {
         const data = Array.isArray(response.data) ? response.data : [];
+        if (!isMountedRef.current) return;
         setBudgetYears(data);
         if (data.length > 0) setSelectedFiscalYear(data[0].fiscalYear);
         setLoading(false);
       })
-      .catch((error) => {
-        setError(`Failed to load budget years: ${error.response?.data?.message || error.message}`);
+      .catch((err) => {
+        if (!isMountedRef.current) return;
+        setError(`Failed to load budget years: ${err.response?.data?.message || err.message}`);
         setBudgetYears([]);
         setLoading(false);
       });
   }, []);
 
-  // Fetch dashboard stats
+  // Fetch dashboard stats whenever selectedFiscalYear changes
   useEffect(() => {
-    if (selectedFiscalYear) {
-      setLoading(true);
-      axios
-        .get(`/transactions/dashboard-stats?fiscalYear=${selectedFiscalYear}`)
-        .then((response) => {
-          setStats(response.data || stats);
-          setLoading(false);
-        })
-        .catch((error) => {
-          let errorMessage = 'Failed to load dashboard statistics.';
-          if (error.response?.status === 404) {
-            errorMessage = `No statistics available for fiscal year ${selectedFiscalYear}.`;
-          } else if (error.response?.status === 403) {
-            errorMessage = 'You do not have permission to view dashboard statistics.';
-          } else {
-            errorMessage = error.response?.data?.message || error.message;
-          }
-          setError(errorMessage);
-          setLoading(false);
-        });
+    if (!selectedFiscalYear) return;
+
+    // Cancel previous stats request if any
+    if (cancelTokenRef.current) {
+      cancelTokenRef.current.cancel('New fiscal year selected');
+      cancelTokenRef.current = null;
     }
+
+    // Keep existing loading semantics (set true then false)
+    setLoading(true);
+
+    // If cached, use it (fast path)
+    const cached = statsCacheRef.current[selectedFiscalYear];
+    if (cached) {
+      setStats(cached);
+      setLoading(false);
+      return;
+    }
+
+    // otherwise fetch and cache
+    const source = axios.CancelToken.source();
+    cancelTokenRef.current = source;
+
+    axios
+      .get(`/transactions/dashboard-stats?fiscalYear=${selectedFiscalYear}`, {
+        cancelToken: source.token,
+      })
+      .then((response) => {
+        if (!isMountedRef.current) return;
+        const payload = response.data || EMPTY_STATS;
+        statsCacheRef.current[selectedFiscalYear] = payload; // cache result
+        setStats(payload);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (!isMountedRef.current) return;
+        if (axios.isCancel(err)) {
+          // request was cancelled - do not treat as error
+          return;
+        }
+        let errorMessage = 'Failed to load dashboard statistics.';
+        if (err.response?.status === 404) {
+          errorMessage = `No statistics available for fiscal year ${selectedFiscalYear}.`;
+        } else if (err.response?.status === 403) {
+          errorMessage = 'You do not have permission to view dashboard statistics.';
+        } else {
+          errorMessage = err.response?.data?.message || err.message;
+        }
+        setError(errorMessage);
+        setLoading(false);
+      });
+
+    // cleanup for this effect: cancel if fiscalYear changes before request completes
+    return () => {
+      if (cancelTokenRef.current) {
+        cancelTokenRef.current.cancel('Fiscal year changed / effect cleanup');
+        cancelTokenRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFiscalYear]);
 
-  const handleFiscalYearChange = (e) => {
+  const handleFiscalYearChange = useCallback((e) => {
     setSelectedFiscalYear(e.target.value);
     setError(null);
-    setStats({
-      totalOrganizations: 0,
-      totalReportTypes: 0,
-      totalDirectorates: 0,
-      totalDocuments: 0,
-      totalUsers: 0,
-      reportTypeStats: {},
-    });
-  };
+    // keep original behavior of resetting stats while loading (preserve functionality)
+    setStats(EMPTY_STATS);
+  }, []);
 
-  const toggleDrawer = () => setDrawerOpen(!drawerOpen);
+  const toggleDrawer = useCallback(() => setDrawerOpen((s) => !s), []);
 
+  // preserve original error-only-without-years UI
   if (error && budgetYears.length === 0) {
     return (
       <Card sx={{ mb: 3 }}>
@@ -200,6 +359,7 @@ const Charts = () => {
     );
   }
 
+  // preserve original single-loading spinner UI
   if (loading) {
     return (
       <Card sx={{ mb: 3 }}>
@@ -249,17 +409,6 @@ const Charts = () => {
 
         {/* Main Content */}
         <Box sx={{ flexGrow: 1, p: 3 }}>
-          <AppBar position="static" sx={{ bgcolor: 'primary.main', mb: 3 }}>
-            <Toolbar>
-              <IconButton edge="start" color="inherit" onClick={toggleDrawer}>
-                <MenuIcon />
-              </IconButton>
-              <Typography variant="h6" sx={{ flexGrow: 1 }}>
-                Dashboard
-              </Typography>
-            </Toolbar>
-          </AppBar>
-
           <Box className="dashboard-container">
             <Grid container spacing={3}>
               {/* Fiscal Year Selection */}
@@ -361,120 +510,9 @@ const Charts = () => {
                 </Grid>
               ))}
 
-              {/* Charts for Each Report Type */}
+              {/* Charts for Each Report Type (memoized child used) */}
               {Object.entries(stats.reportTypeStats).map(([reportType, counts]) => (
-                <Grid item xs={12} md={12} key={`${reportType}-chart`}>
-                  <Card className="animate__animated animate__fadeInUp">
-                    <CardContent sx={{ bgcolor: 'white', color: 'black', p: 2, borderRadius: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <PieChart sx={{ mr: 1 }} />
-                        <Typography variant="h6">{reportType} Senders vs Non-Senders</Typography>
-                      </Box>
-                    </CardContent>
-                    <CardContent sx={{ p: 2 }}>
-                      <Grid container spacing={2}>
-                        {/* Bar Chart */}
-                        <Grid item xs={12} md={6}>
-                          <Box className="chart-container">
-                            <Bar
-                              data={{
-                                labels: ['Senders', 'Non-Senders'],
-                                datasets: [
-                                  {
-                                    label: 'Number of Organizations',
-                                    backgroundColor: (context) => {
-                                      const chart = context.chart;
-                                      const { ctx, chartArea } = chart;
-                                      if (!chartArea) return ['#013A6B', '#dc3545'];
-                                      return [
-                                        getGradient(ctx, chartArea, '#013A6B', '#00C4B4'),
-                                        getGradient(ctx, chartArea, '#dc3545', '#ff8a65'),
-                                      ];
-                                    },
-                                    data: [counts.senders, counts.nonSenders],
-                                    borderRadius: 8,
-                                  },
-                                ],
-                              }}
-                              options={{
-                                maintainAspectRatio: false,
-                                plugins: {
-                                  tooltip: {
-                                    backgroundColor: 'rgba(0,0,0,0.8)',
-                                    titleFont: { size: 14 },
-                                    bodyFont: { size: 12 },
-                                  },
-                                },
-                                scales: {
-                                  y: {
-                                    beginAtZero: true,
-                                    title: { display: true, text: 'Number of Organizations', font: { size: 14 } },
-                                    grid: { color: '#e0e0e0' },
-                                  },
-                                  x: { grid: { display: false } },
-                                },
-                                animation: {
-                                  duration: 1000,
-                                  easing: 'easeOutQuart',
-                                },
-                              }}
-                              height={300}
-                            />
-                          </Box>
-                        </Grid>
-                        {/* Pie Chart */}
-                        <Grid item xs={12} md={6}>
-                          <Box className="chart-container">
-                            <Pie
-                              data={{
-                                labels: ['Senders', 'Non-Senders'],
-                                datasets: [
-                                  {
-                                    label: 'Number of Organizations',
-                                    backgroundColor: (context) => {
-                                      const chart = context.chart;
-                                      const { ctx, chartArea } = chart;
-                                      if (!chartArea) return ['#013A6B', '#dc3545'];
-                                      return [
-                                        getGradient(ctx, chartArea, '#013A6B', '#00C4B4'),
-                                        getGradient(ctx, chartArea, '#dc3545', '#ff8a65'),
-                                      ];
-                                    },
-                                    data: [counts.senders, counts.nonSenders],
-                                    borderWidth: 1,
-                                    borderColor: '#fff',
-                                  },
-                                ],
-                              }}
-                              options={{
-                                maintainAspectRatio: false,
-                                plugins: {
-                                  tooltip: {
-                                    backgroundColor: 'rgba(0,0,0,0.8)',
-                                    titleFont: { size: 14 },
-                                    bodyFont: { size: 12 },
-                                  },
-                                  legend: {
-                                    display: true,
-                                    position: 'top',
-                                    labels: {
-                                      font: { size: 12 },
-                                    },
-                                  },
-                                },
-                                animation: {
-                                  duration: 1000,
-                                  easing: 'easeOutQuart',
-                                },
-                              }}
-                              height={300}
-                            />
-                          </Box>
-                        </Grid>
-                      </Grid>
-                    </CardContent>
-                  </Card>
-                </Grid>
+                <ReportTypeCard key={`${reportType}-chart`} reportType={reportType} counts={counts} />
               ))}
             </Grid>
           </Box>
@@ -484,7 +522,7 @@ const Charts = () => {
   );
 };
 
-// Error Boundary
+// Error Boundary (kept unchanged)
 class ChartsErrorBoundary extends React.Component {
   state = { hasError: false };
 

@@ -153,76 +153,87 @@ public class UserService {
     }
 
     public User save(User user) {
-        if (user.getId() != null) {
-            User existingUser = userRepository.findById(user.getId())
-                    .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + user.getId()));
-            existingUser.setFirstName(user.getFirstName());
-            existingUser.setLastName(user.getLastName());
-            existingUser.setUsername(user.getUsername());
+    if (user.getId() != null) {
+        User existingUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + user.getId()));
 
-            if (StringUtils.isNotBlank(user.getPassword())) {
-                existingUser.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
-            }
-
-
-
-            if (user.getOrganization() != null && StringUtils.isNotBlank(user.getOrganization().getId())) {
-                Organization org = organizationRepository.findById(user.getOrganization().getId())
-                        .orElseThrow(() -> new IllegalArgumentException(
-                                "Organization not found with id: " + user.getOrganization().getId()));
-                existingUser.setOrganization(org);
-            } else {
-                existingUser.setOrganization(null);
-            }
-
-            if (user.getDirectorate() != null && StringUtils.isNotBlank(user.getDirectorate().getId())) {
-                Directorate dir = directorateRepository.findById(user.getDirectorate().getId())
-                        .orElseThrow(() -> new IllegalArgumentException(
-                                "Directorate not found with id: " + user.getDirectorate().getId()));
-                existingUser.setDirectorate(dir);
-            } else {
-                existingUser.setDirectorate(null);
-            }
-
-            existingUser.setConfirmPassword(null);
-            return userRepository.save(existingUser);
+        // Check for username uniqueness (excluding current user)
+        User existingUserWithUsername = userRepository.findByUsername(user.getUsername());
+        if (existingUserWithUsername != null && !existingUserWithUsername.getId().equals(user.getId())) {
+            throw new UserAlreadyExistException("Username already exists: " + user.getUsername());
         }
-        return register(user, "USER");
+
+        existingUser.setFirstName(user.getFirstName());
+        existingUser.setLastName(user.getLastName());
+        existingUser.setUsername(user.getUsername());
+
+        if (StringUtils.isNotBlank(user.getPassword())) {
+            if (!user.getPassword().equals(user.getConfirmPassword())) {
+                throw new IllegalArgumentException("Password and confirm password do not match");
+            }
+            if ("admin".equals(user.getPassword())) {
+                throw new IllegalArgumentException("Password cannot be 'admin'");
+            }
+            existingUser.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
+        }
+
+        if (user.getOrganization() != null && StringUtils.isNotBlank(user.getOrganization().getId())) {
+            Organization org = organizationRepository.findById(user.getOrganization().getId())
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Organization not found with id: " + user.getOrganization().getId()));
+            existingUser.setOrganization(org);
+        } else {
+            existingUser.setOrganization(null);
+        }
+
+        if (user.getDirectorate() != null && StringUtils.isNotBlank(user.getDirectorate().getId())) {
+            Directorate dir = directorateRepository.findById(user.getDirectorate().getId())
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Directorate not found with id: " + user.getDirectorate().getId()));
+            existingUser.setDirectorate(dir);
+        } else {
+            existingUser.setDirectorate(null);
+        }
+
+        existingUser.setConfirmPassword(null);
+        return userRepository.save(existingUser);
     }
+    return register(user, "USER");
+}
 
     public UserDTO convertToDTO(User user) {
-        UserDTO dto = new UserDTO();
-        dto.setId(user.getId());
-        dto.setUsername(user.getUsername());
-        dto.setFirstName(user.getFirstName());
-        dto.setLastName(user.getLastName());
-        dto.setOrgname(user.getOrganization() != null ? user.getOrganization().getOrgname() : null);
-        dto.setDirectoratename(user.getDirectorate() != null ? user.getDirectorate().getDirectoratename() : null);
-        dto.setEnabled(user.isEnabled());
-        if (user.getOrganization() != null) {
-            OrganizationDTO orgDTO = new OrganizationDTO();
-            orgDTO.setId(user.getOrganization().getId());
-            orgDTO.setOrgname(user.getOrganization().getOrgname());
-            dto.setOrganization(orgDTO);
-        }
-        if (user.getDirectorate() != null) {
-            DirectorateDTO dirDTO = new DirectorateDTO();
-            dirDTO.setId(user.getDirectorate().getId());
-            dirDTO.setDirectoratename(user.getDirectorate().getDirectoratename());
-            dto.setDirectorate(dirDTO);
-        }
-        Set<RoleDTO> roleDTOs = user.getRoles().stream()
-                .map(role -> {
-                    RoleDTO roleDTO = new RoleDTO();
-                    roleDTO.setId(role.getId());
-                    roleDTO.setDescription(role.getDescription());
-                    roleDTO.setDetails(role.getDetails());
-                    return roleDTO;
-                })
-                .collect(Collectors.toSet());
-        dto.setRoles(roleDTOs);
-        return dto;
+    UserDTO dto = new UserDTO();
+    dto.setId(user.getId());
+    dto.setUsername(user.getUsername());
+    dto.setFirstName(user.getFirstName());
+    dto.setLastName(user.getLastName());
+    dto.setOrgname(user.getOrganization() != null ? user.getOrganization().getOrgname() : null);
+    dto.setDirectoratename(user.getDirectorate() != null ? user.getDirectorate().getDirectoratename() : null);
+    dto.setEnabled(user.isEnabled());
+    if (user.getOrganization() != null) {
+        OrganizationDTO orgDTO = new OrganizationDTO();
+        orgDTO.setId(user.getOrganization().getId());
+        orgDTO.setOrgname(user.getOrganization().getOrgname());
+        dto.setOrganization(orgDTO);
     }
+    if (user.getDirectorate() != null) {
+        DirectorateDTO dirDTO = new DirectorateDTO();
+        dirDTO.setId(user.getDirectorate().getId());
+        dirDTO.setDirectoratename(user.getDirectorate().getDirectoratename());
+        dto.setDirectorate(dirDTO);
+    }
+    Set<RoleDTO> roleDTOs = user.getRoles().stream()
+            .map(role -> {
+                RoleDTO roleDTO = new RoleDTO();
+                roleDTO.setId(role.getId());
+                roleDTO.setDescription(role.getDescription());
+                roleDTO.setDetails(role.getDetails());
+                return roleDTO;
+            })
+            .collect(Collectors.toSet());
+    dto.setRoles(roleDTOs);
+    return dto;
+}
 
     public void deleteUser(Long id) {
         userRepository.deleteById(id);

@@ -400,45 +400,66 @@ export default function User() {
         setSnackbarOpen(true);
     }
 };
-
-  const handleEditUser = async () => {
-    try {
-      const payload = {
-        firstName: currentUser.firstName.trim(),
-        lastName: currentUser.lastName.trim(),
-        username: currentUser.username.trim(),
-        organizationId: currentUser.organizationId || null,
-        directorateId: currentUser.directorateId || null,
-        role: 'USER',
-      };
-      if (currentUser.password.trim()) {
-        if (!currentUser.confirmPassword.trim() || currentUser.password !== currentUser.confirmPassword) {
-          throw new Error('Password and Confirm Password must match');
-        }
-        payload.password = currentUser.password.trim();
-        payload.confirmPassword = currentUser.confirmPassword.trim();
-      }
-      await axiosInstance.put(`/users/${currentUser.id}`, payload);
-      const updatedUser = await axiosInstance.get(`/users/${currentUser.id}`);
-      setUsers(users.map((user) => (user.id === currentUser.id ? updatedUser.data : user)));
-      setSnackbarMessage('User updated successfully!');
-      setSnackbarSeverity('success');
-      setSnackbarOpen(true);
-      handleCloseAddEdit();
-    } catch (error) {
-      const msg =
-        error.message === 'Password and Confirm Password must match'
-          ? error.message
-          : error.response?.status === 400
-          ? error.response?.data?.message || 'Validation error: Please check your inputs'
-          : error.response?.status === 409
-          ? 'Username already exists'
-          : error.response?.data?.message || 'Error updating user';
-      setSnackbarMessage(msg);
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
+const handleEditUser = async () => {
+  try {
+    // Validate inputs
+    if (!currentUser.firstName.trim()) {
+      throw new Error('First name is required');
     }
-  };
+    if (!currentUser.lastName.trim()) {
+      throw new Error('Last name is required');
+    }
+    if (!currentUser.username.trim()) {
+      throw new Error('Username is required');
+    }
+    if (currentUser.password.trim() && currentUser.password !== currentUser.confirmPassword) {
+      throw new Error('Password and confirm password must match');
+    }
+    if (currentUser.password.trim() === 'admin') {
+      throw new Error('Password cannot be "admin"');
+    }
+
+    const payload = {
+      id: currentUser.id,
+      firstName: currentUser.firstName.trim(),
+      lastName: currentUser.lastName.trim(),
+      username: currentUser.username.trim(),
+      organization: currentUser.organizationId ? { id: currentUser.organizationId } : null,
+      directorate: currentUser.directorateId ? { id: currentUser.directorateId } : null,
+      // Only include password fields if they are provided
+      ...(currentUser.password.trim() && {
+        password: currentUser.password.trim(),
+        confirmPassword: currentUser.confirmPassword.trim(),
+      }),
+    };
+
+    console.log('PUT /users payload:', payload);
+    const response = await axiosInstance.put(`/users/${currentUser.id}`, payload);
+    console.log('PUT /users response:', response.data);
+    const updatedUser = await axiosInstance.get(`/users/${currentUser.id}`);
+    setUsers(users.map((user) => (user.id === currentUser.id ? updatedUser.data : user)));
+    setSnackbarMessage('User updated successfully!');
+    setSnackbarSeverity('success');
+    setSnackbarOpen(true);
+    handleCloseAddEdit();
+  } catch (error) {
+    const msg =
+      error.message ||
+      (error.response?.status === 400
+        ? error.response?.data?.error || 'Validation error: Please check your inputs'
+        : error.response?.status === 409
+        ? 'Username already exists'
+        : error.response?.status === 401
+        ? 'Unauthorized: Please log in as an admin'
+        : error.response?.status === 403
+        ? 'Forbidden: Admin access required'
+        : error.response?.data?.error || 'Error updating user');
+    console.error('Error updating user:', error.response || error);
+    setSnackbarMessage(msg);
+    setSnackbarSeverity('error');
+    setSnackbarOpen(true);
+  }
+};
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);

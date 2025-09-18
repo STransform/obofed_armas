@@ -149,22 +149,74 @@ public ResponseEntity<?> createUser(@RequestBody UserRequest userRequest) {
     }
 }
 
-  @PutMapping("/{id}")
+ @PutMapping("/{id}")
 @PreAuthorize("hasRole('ADMIN')")
-public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User user) {
+public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
+    logger.info("Updating user with ID: {}", id);
     try {
-        UserDTO existingUser = userService.getUserById(id);
-        if (existingUser == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found with ID: " + id));
+        // Validate input
+        if (StringUtils.isBlank(userDTO.getUsername())) {
+            logger.warn("Username is empty for user ID: {}", id);
+            return ResponseEntity.badRequest().body(Map.of("error", "Username is required"));
         }
+        if (StringUtils.isBlank(userDTO.getFirstName())) {
+            logger.warn("First name is empty for user ID: {}", id);
+            return ResponseEntity.badRequest().body(Map.of("error", "First name is required"));
+        }
+        if (StringUtils.isBlank(userDTO.getLastName())) {
+            logger.warn("Last name is empty for user ID: {}", id);
+            return ResponseEntity.badRequest().body(Map.of("error", "Last name is required"));
+        }
+
+        // Convert DTO to entity
+        User user = new User();
         user.setId(id);
-        UserDTO updatedUser = userService.convertToDTO(userService.save(user));
-        return ResponseEntity.ok(updatedUser);
+        user.setFirstName(userDTO.getFirstName());
+        user.setLastName(userDTO.getLastName());
+        user.setUsername(userDTO.getUsername());
+
+        // Handle organization
+        if (userDTO.getOrganization() != null && StringUtils.isNotBlank(userDTO.getOrganization().getId())) {
+            Organization org = organizationRepository.findById(userDTO.getOrganization().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Organization not found: " + userDTO.getOrganization().getId()));
+            user.setOrganization(org);
+        } else {
+            user.setOrganization(null);
+        }
+
+        // Handle directorate
+        if (userDTO.getDirectorate() != null && StringUtils.isNotBlank(userDTO.getDirectorate().getId())) {
+            Directorate dir = directorateRepository.findById(userDTO.getDirectorate().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Directorate not found: " + userDTO.getDirectorate().getId()));
+            user.setDirectorate(dir);
+        } else {
+            user.setDirectorate(null);
+        }
+
+        // Handle password if provided
+        if (StringUtils.isNotBlank(userDTO.getPassword())) {
+            if (!userDTO.getPassword().equals(userDTO.getConfirmPassword())) {
+                logger.warn("Password and confirm password do not match for user ID: {}", id);
+                return ResponseEntity.badRequest().body(Map.of("error", "Password and confirm password do not match"));
+            }
+            if ("admin".equals(userDTO.getPassword())) {
+                logger.warn("Attempt to use restricted password for user ID: {}", id);
+                return ResponseEntity.badRequest().body(Map.of("error", "Password cannot be 'admin'"));
+            }
+            user.setPassword(userDTO.getPassword());
+            user.setConfirmPassword(userDTO.getConfirmPassword());
+        }
+
+        User updatedUser = userService.save(user);
+        return ResponseEntity.ok(userService.convertToDTO(updatedUser));
     } catch (IllegalArgumentException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        logger.warn("Invalid request for updating user ID {}: {}", id, e.getMessage());
+        return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
     } catch (UserAlreadyExistException e) {
+        logger.warn("Username already exists for user ID {}: {}", id, e.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Username already exists: " + e.getMessage()));
     } catch (Exception e) {
+        logger.error("Unexpected error updating user ID {}: {}", id, e.getMessage(), e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Failed to update user: " + e.getMessage()));
     }
 }

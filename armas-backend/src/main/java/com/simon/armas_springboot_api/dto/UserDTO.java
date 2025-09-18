@@ -33,22 +33,26 @@ public class UserDTO implements Serializable {
     private String orgname;
     private String directoratename;
     private boolean enabled;
+    private String password; // Added
+    private String confirmPassword; // Added
     private Set<RoleDTO> roles;
-     private OrganizationDTO organization; 
-    private DirectorateDTO directorate;   
-// Constructors
-public UserDTO() {}
+    private OrganizationDTO organization;
+    private DirectorateDTO directorate;
 
-public UserDTO(Long id, String username, String firstName, String lastName) {
-    this.id = id;
-    this.username = username;
-    this.firstName = firstName;
-    this.lastName = lastName;
-    this.orgname = null;
-    this.directoratename = null;
-    this.enabled = false;
-    this.roles = new HashSet<>();
-}
+    // Constructors
+    public UserDTO() {}
+
+    public UserDTO(Long id, String username, String firstName, String lastName) {
+        this.id = id;
+        this.username = username;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.orgname = null;
+        this.directoratename = null;
+        this.enabled = false;
+        this.roles = new HashSet<>();
+    }
+
     // Getters and setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -64,6 +68,10 @@ public UserDTO(Long id, String username, String firstName, String lastName) {
     public void setDirectoratename(String directoratename) { this.directoratename = directoratename; }
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+    public String getConfirmPassword() { return confirmPassword; }
+    public void setConfirmPassword(String confirmPassword) { this.confirmPassword = confirmPassword; }
     public Set<RoleDTO> getRoles() { return roles; }
     public void setRoles(Set<RoleDTO> roles) { this.roles = roles; }
     public OrganizationDTO getOrganization() { return organization; }

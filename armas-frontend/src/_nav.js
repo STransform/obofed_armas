@@ -22,6 +22,9 @@ import {
   cilBuilding,
   cilTransfer,
   cilFilter,
+  cilCheck,
+  cilX,
+  cilClock,
 } from '@coreui/icons';
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react';
 import { useAuth } from './views/pages/AuthProvider';
@@ -48,12 +51,12 @@ const Nav = () => {
 
   console.log('Nav: Role checks:', { isAdmin, isUser, isSeniorAuditor, isArchiver, isApprover, isManager });
 
-  const commonItems = []; // Removed the IRMS item to avoid redundancy
+  const commonItems = []; // Shared items for all roles
 
   const userItems = [
     {
       component: CNavItem,
-      name: 'Outgoing reports',
+      name: 'Outgoing Reports',
       to: '/buttons/file-upload',
       icon: <CIcon icon={cilCloudUpload} customClassName="nav-icon" />,
     },
@@ -61,13 +64,13 @@ const Nav = () => {
       component: CNavItem,
       name: 'Incoming Letters',
       to: '/buttons/letter-download',
-      icon: <CIcon icon={cilCloudUpload} customClassName="nav-icon" />,
+      icon: <CIcon icon={cilCloudDownload} customClassName="nav-icon" />,
     },
     {
       component: CNavItem,
       name: 'File History',
       to: '/file-history',
-      icon: <CIcon icon={cilCloudUpload} customClassName="nav-icon" />,
+      icon: <CIcon icon={cilNotes} customClassName="nav-icon" />,
     },
   ];
 
@@ -85,8 +88,7 @@ const Nav = () => {
     {
       component: CNavGroup,
       name: 'Manage',
-      to: '/buttons',
-      icon: <CIcon icon={cilCursor} customClassName="nav-icon" />,
+      icon: <CIcon icon={cilPuzzle} customClassName="nav-icon" />,
       items: [
         {
           component: CNavItem,
@@ -102,7 +104,7 @@ const Nav = () => {
         },
         {
           component: CNavItem,
-          name: 'Report type',
+          name: 'Report Type',
           to: '/buttons/documents',
           icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
         },
@@ -110,14 +112,13 @@ const Nav = () => {
           component: CNavItem,
           name: 'Budget Year',
           to: '/buttons/budgetyear',
-          icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
+          icon: <CIcon icon={cilCalculator} customClassName="nav-icon" />,
         },
       ],
     },
     {
       component: CNavGroup,
       name: 'Manage User',
-      to: '/buttons',
       icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
       items: [
         {
@@ -134,7 +135,7 @@ const Nav = () => {
         },
         {
           component: CNavItem,
-          name: 'AssignRole',
+          name: 'Assign Role',
           to: '/buttons/assign',
           icon: <CIcon icon={cilLockLocked} customClassName="nav-icon" />,
         },
@@ -152,7 +153,7 @@ const Nav = () => {
     ? [
         {
           component: CNavItem,
-          name: 'Upload',
+          name: 'Upload to Organizations',
           to: '/transactions/upload-to-organizations',
           icon: <CIcon icon={cilCloudUpload} customClassName="nav-icon" />,
         },
@@ -177,7 +178,7 @@ const Nav = () => {
                 component: CNavItem,
                 name: 'Approved Reports',
                 to: '/transactions/approved-reports',
-                icon: <CIcon icon={cilCloudDownload} customClassName="nav-icon" />,
+                icon: <CIcon icon={cilCheck} customClassName="nav-icon" />,
               },
               {
                 component: CNavItem,
@@ -191,7 +192,7 @@ const Nav = () => {
           ? [
               {
                 component: CNavItem,
-                name: 'Assigned tasks',
+                name: 'Assigned Tasks',
                 to: '/transactions/auditor-tasks',
                 icon: <CIcon icon={cilTask} customClassName="nav-icon" />,
               },
@@ -199,25 +200,25 @@ const Nav = () => {
                 component: CNavItem,
                 name: 'Rejected Reports',
                 to: '/transactions/rejected-reports',
-                icon: <CIcon icon={cilCloudDownload} customClassName="nav-icon" />,
+                icon: <CIcon icon={cilX} customClassName="nav-icon" />,
               },
               {
                 component: CNavItem,
                 name: 'Approved Reports',
                 to: '/transactions/approved-reports',
-                icon: <CIcon icon={cilCloudDownload} customClassName="nav-icon" />,
+                icon: <CIcon icon={cilCheck} customClassName="nav-icon" />,
               },
               {
                 component: CNavItem,
                 name: 'Under Review',
                 to: '/transactions/under-review-reports',
-                icon: <CIcon icon={cilTask} customClassName="nav-icon" />,
+                icon: <CIcon icon={cilClock} customClassName="nav-icon" />,
               },
               {
                 component: CNavItem,
                 name: 'Corrected Reports',
                 to: '/transactions/corrected-reports',
-                icon: <CIcon icon={cilTask} customClassName="nav-icon" />,
+                icon: <CIcon icon={cilPencil} customClassName="nav-icon" />,
               },
             ]
           : []),

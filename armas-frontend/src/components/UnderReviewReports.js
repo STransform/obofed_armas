@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   CCard,
@@ -90,7 +89,9 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 
 export default function UnderReviewReports() {
   const { roles } = useAuth();
-  const isApprover = roles.includes('APPROVER');
+  // Updated role check to match Nav.js logic
+  const isApprover = Array.isArray(roles) && roles.some((r) => r.description === 'APPROVER');
+  const isSeniorAuditor = Array.isArray(roles) && roles.some((r) => r.description === 'SENIOR_AUDITOR');
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -106,6 +107,12 @@ export default function UnderReviewReports() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [rejectionDocument, setRejectionDocument] = useState(null);
   const [approvalDocument, setApprovalDocument] = useState(null);
+
+  // Debug role status
+  useEffect(() => {
+    console.log('UnderReviewReports: Roles:', roles);
+    console.log('UnderReviewReports: isApprover:', isApprover, 'isSeniorAuditor:', isSeniorAuditor);
+  }, [roles]);
 
   const fetchReports = async () => {
     setLoading(true);
@@ -133,8 +140,6 @@ export default function UnderReviewReports() {
     console.log('UnderReviewReports: Component mounted');
     fetchReports();
   }, []);
-
-
 
   const handleDownload = useCallback(async (id, filename, type) => {
     try {
@@ -174,6 +179,14 @@ export default function UnderReviewReports() {
     setShowApprovalModal(true);
   };
 
+  const handleReject = (report) => {
+    console.log('UnderReviewReports: handleReject called with report:', report);
+    setSelectedReport(report);
+    setRejectionReason('');
+    setRejectionDocument(null);
+    setShowRejectModal(true);
+  };
+
   const handleApproveSubmit = async () => {
     try {
       const file = document.getElementById('approvalDocument')?.files[0];
@@ -191,14 +204,6 @@ export default function UnderReviewReports() {
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     }
-  };
-
-  const handleReject = (report) => {
-    console.log('UnderReviewReports: handleReject called with report:', report);
-    setSelectedReport(report);
-    setRejectionReason('');
-    setRejectionDocument(null);
-    setShowRejectModal(true);
   };
 
   const handleRejectSubmit = async () => {
@@ -255,7 +260,6 @@ export default function UnderReviewReports() {
     setShowApprovalModal(false);
     setApprovalDocument(null);
   };
-
 
   const filteredReports = reports.filter(
     (report) =>
@@ -335,8 +339,6 @@ export default function UnderReviewReports() {
                                         variant="outlined"
                                         size="small"
                                         startIcon={<DownloadIcon />}
-
-
                                         onClick={() => handleDownload(report.id, report.docname, 'original')}
                                         aria-label="Download original report"
                                       >
@@ -409,7 +411,6 @@ export default function UnderReviewReports() {
                     page={page}
                     onPageChange={handleChangePage}
                     rowsPerPage={rowsPerPage}
-
                     onRowsPerPageChange={handleChangeRowsPerPage}
                     rowsPerPageOptions={[5, 10, 25]}
                   />
@@ -433,7 +434,7 @@ export default function UnderReviewReports() {
         <DialogContent>
           <CForm className="row g-3">
             <CCol xs={12}>
-              <CFormLabel htmlFor="approvalDocument">Attach Document (Optional)</CFormLabel>
+              <CFormLabel htmlFor="approvalDocument">Attach Document</CFormLabel>
               <input
                 type="file"
                 className="form-control"
@@ -478,7 +479,7 @@ export default function UnderReviewReports() {
               />
             </CCol>
             <CCol xs={12}>
-              <CFormLabel htmlFor="rejectionDocument">Attach Rejection Document (Optional)</CFormLabel>
+              <CFormLabel htmlFor="rejectionDocument">Attach Rejection Document</CFormLabel>
               <input
                 type="file"
                 className="form-control"

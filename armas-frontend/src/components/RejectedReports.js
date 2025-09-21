@@ -569,7 +569,7 @@ export default function RejectedReports() {
               </select>
             </CCol>
             <CCol xs={12}>
-              <CFormLabel htmlFor="resubmitSupportingDocument">Supporting Document (Optional)</CFormLabel>
+              <CFormLabel htmlFor="resubmitSupportingDocument">Supporting Document</CFormLabel>
               <input
                 type="file"
                 className="form-control"
@@ -653,7 +653,7 @@ export default function RejectedReports() {
               </select>
             </CCol>
             <CCol xs={12}>
-              <CFormLabel htmlFor="evaluateSupportingDocument">Supporting Document (Optional)</CFormLabel>
+              <CFormLabel htmlFor="evaluateSupportingDocument">Supporting Document </CFormLabel>
               <input
                 type="file"
                 className="form-control"

@@ -1,90 +1,118 @@
+/* AppHeader.css */
 .custom-header {
-  background: #212529 !important;
-  color: #171616 !important;
-  font-size: 20px;
-  min-height: 80px !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-  z-index: 999;
+  background: linear-gradient(135deg, #1e1e2f 0%, #2a2a4e 100%) !important;
+  color: #ffffff !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-height: 64px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  transition: box-shadow 0.3s ease;
 }
 
 .custom-header .header-logo {
-  height: 60px;
-  width: 60px;
+  height: 48px;
+  width: 48px;
   object-fit: contain;
-  border-radius: 50%;
-  background-color: white;
-  padding: 5px;
+  border-radius: 12px;
+  background-color: #ffffff;
+  padding: 6px;
+  transition: transform 0.3s ease;
+}
+
+.custom-header .header-logo:hover {
+  transform: scale(1.05);
 }
 
 .custom-header .navbar-brand {
   color: #ffffff !important;
-  font-size: 20px;
-  font-weight: bold;
+  font-size: 1.5rem;
+  font-weight: 600;
   padding: 0.5rem 1rem;
+  letter-spacing: 0.5px;
 }
 
 .custom-header .nav-link {
-  color: #ffffff !important;
+  color: #e0e0e0 !important;
   padding: 0.5rem 1rem;
   font-weight: 500;
-  transition: background-color 0.2s ease, color 0.2s ease;
-  border-radius: 4px;
+  font-size: 1rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
 }
 
 .custom-header .nav-link:hover,
 .custom-header .nav-link.active {
-  background-color: #FF0000 !important;
+  background-color: #e63946 !important; /* Vibrant red accent */
   color: #ffffff !important;
+  transform: translateY(-1px);
 }
 
 .custom-header .nav-item.active .nav-link,
 .custom-header .nav-item.show .nav-link {
-  background-color: #0c11a1 !important;
+  background-color: #3a86ff !important; /* Blue for active state */
   color: #ffffff !important;
 }
 
 .custom-header .dropdown-menu {
-  background: linear-gradient(30deg, #013A6B 50%, teal 50%) !important;
-  border: 1px solid #ffffff !important;
-  font-size: 16px;
-  min-width: 200px;
+  background: linear-gradient(135deg, #2a2a4e 0%, #1f4068 100%) !important;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: 0.95rem;
+  min-width: 220px;
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .custom-header .dropdown-item {
-  color: #ffffff !important;
-  padding: 0.5rem 1rem;
-  background-color: transparent !important;
-  transition: background-color 0.2s ease;
+  color: #e0e0e0 !important;
+  padding: 0.75rem 1.25rem;
+  transition: all 0.3s ease;
 }
 
 .custom-header .dropdown-item:hover,
 .custom-header .dropdown-item.active {
-  background-color: #FF0000 !important;
+  background-color: #e63946 !important;
   color: #ffffff !important;
 }
 
 .custom-header .c-dropdown-toggle {
   color: #ffffff !important;
   padding: 0.5rem 1rem !important;
-  line-height: 1.5 !important;
+  transition: background-color 0.3s ease;
+}
+
+.custom-header .c-dropdown-toggle:focus {
+  outline: 2px solid #3a86ff;
+  outline-offset: 2px;
 }
 
 .custom-header .c-header-toggler {
   color: #ffffff !important;
   padding: 0.5rem;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+}
+
+.custom-header .c-header-toggler:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.custom-header .c-header-toggler:focus {
+  outline: 2px solid #3a86ff;
+  outline-offset: 2px;
 }
 
 .custom-header .border-bottom {
-  border-color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 .custom-header .dropdown:hover .dropdown-menu {
   display: block;
-}
-
-.custom-header .mx-auto {
-  flex-grow: 0;
-  margin: 0 20px;
 }
 
 /* Notification and Menu Icon Styling */
@@ -96,12 +124,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 10px;
+  margin: 0 12px;
 }
 
 .notification-icon-button,
 .menu-icon-button {
-  padding: 0;
   width: 40px;
   height: 40px;
   display: flex;
@@ -109,36 +136,43 @@
   justify-content: center;
   background-color: transparent;
   border: none;
-  transition: background-color 0.2s ease;
+  border-radius: 50%;
+  transition: all 0.3s ease;
 }
 
 .notification-icon-button:hover,
 .menu-icon-button:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.15);
+  transform: scale(1.1);
+}
+
+.notification-icon-button:focus,
+.menu-icon-button:focus {
+  outline: 2px solid #3a86ff;
+  outline-offset: 2px;
 }
 
 .notification-icon,
 .menu-icon {
-  font-size: 24px;
+  font-size: 1.25rem;
   color: #ffffff;
 }
 
 .notification-badge {
   position: absolute;
-  top: 0;
-  right: 0;
-  font-size: 0.75rem;
-  padding: 0.2rem 0.4rem;
-  border-radius: 50%;
-  background-color: #dc3545;
+  top: -4px;
+  right: -4px;
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  background-color: #e63946;
   color: #fff;
-  min-width: 16px;
-  height: 16px;
-  line-height: 16px;
+  min-width: 18px;
+  height: 18px;
+  line-height: 18px;
   text-align: center;
   z-index: 1002;
-  box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Tablet (max-width: 991.98px) */
@@ -150,16 +184,16 @@
   .custom-header .nav-link,
   .custom-header .c-dropdown-toggle {
     padding: 0.4rem 0.8rem;
-    font-size: 16px;
+    font-size: 0.95rem;
   }
 
   .custom-header .header-logo {
-    height: 50px;
-    width: 50px;
+    height: 40px;
+    width: 40px;
   }
 
   .custom-header .navbar-brand {
-    font-size: 18px;
+    font-size: 1.25rem;
   }
 
   .notification-container,
@@ -177,36 +211,36 @@
 
   .notification-icon,
   .menu-icon {
-    font-size: 20px;
+    font-size: 1.1rem;
   }
 
   .notification-badge {
-    font-size: 0.7rem;
-    min-width: 14px;
-    height: 14px;
-    line-height: 14px;
+    font-size: 0.65rem;
+    min-width: 16px;
+    height: 16px;
+    line-height: 16px;
   }
 }
 
 /* Mobile (max-width: 767.98px) */
 @media (max-width: 767.98px) {
   .custom-header {
-    min-height: 50px !important;
+    min-height: 56px !important;
   }
 
   .custom-header .nav {
     display: none;
     flex-direction: column;
-    background: linear-gradient(30deg, #013A6B 50%, teal 50%) !important;
+    background: linear-gradient(135deg, #2a2a4e 0%, #1f4068 100%) !important;
     position: absolute;
     top: 100%;
     left: 0;
     width: 100%;
     z-index: 998;
-    padding: 0.5rem;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    border-bottom-left-radius: 10px;
-    border-bottom-right-radius: 10px;
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-radius: 0 0 12px 12px;
+    animation: slideIn 0.3s ease-out;
   }
 
   .custom-header .nav.show {
@@ -222,32 +256,33 @@
   .custom-header .c-dropdown-toggle {
     width: 100%;
     text-align: left;
-    padding: 0.6rem 1rem;
-    font-size: 16px;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
   }
 
   .custom-header .dropdown-menu {
     width: 100%;
     position: static;
     border: none;
-    background: linear-gradient(30deg, #013A6B 50%, teal 50%) !important;
-    padding: 0.3rem 0;
+    background: linear-gradient(135deg, #2a2a4e 0%, #1f4068 100%) !important;
+    padding: 0.5rem 0;
+    box-shadow: none;
   }
 
   .custom-header .dropdown-item {
     padding-left: 1.5rem;
-    font-size: 14px;
+    font-size: 0.9rem;
   }
 
   .custom-header .navbar-brand {
-    font-size: 16px;
-    margin-left: 10px;
+    font-size: 1.1rem;
+    margin-left: 8px;
   }
 
   .custom-header .header-logo {
-    height: 40px;
-    width: 40px;
-    margin-left: 10px;
+    height: 36px;
+    width: 36px;
+    margin-left: 8px;
   }
 
   .notification-container,
@@ -265,13 +300,13 @@
 
   .notification-icon,
   .menu-icon {
-    font-size: 18px;
+    font-size: 1rem;
   }
 
   .notification-badge {
-    font-size: 0.65rem;
-    min-width: 12px;
-    height: 12px;
-    line-height: 12px;
+    font-size: 0.6rem;
+    min-width: 14px;
+    height: 14px;
+    line-height: 14px;
   }
 }

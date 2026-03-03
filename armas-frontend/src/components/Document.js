@@ -122,9 +122,7 @@ export default function Document() {
         console.log('Documents:', documentsResponse.data);
         setDirectorates(Array.isArray(directoratesResponse.data) ? directoratesResponse.data : []);
         setDocuments(Array.isArray(documentsResponse.data) ? documentsResponse.data : []);
-        if (documentsResponse.data.length === 0) {
-          setError('No documents available.');
-        }
+        // Note: empty documents list is not an error — the Add button should still show
         if (directoratesResponse.data.length === 0) {
           setError('No directorates available. Please add a directorate first.');
           setSnackbarMessage('No directorates available. Please add a directorate first.');
@@ -133,9 +131,8 @@ export default function Document() {
         }
       } catch (error) {
         const errorMessage = error.response
-          ? `Error ${error.response.status}: ${
-              error.response.data?.message || error.response.statusText
-            }`
+          ? `Error ${error.response.status}: ${error.response.data?.message || error.response.statusText
+          }`
           : error.message;
         setError(errorMessage);
         setSnackbarMessage(errorMessage);
@@ -179,8 +176,8 @@ export default function Document() {
         status === 403
           ? 'You need admin privileges to delete a document'
           : status === 404
-          ? 'Document not found'
-          : error.response?.data?.message || 'Error deleting document';
+            ? 'Document not found'
+            : error.response?.data?.message || 'Error deleting document';
       setSnackbarMessage(msg);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
@@ -246,15 +243,14 @@ export default function Document() {
 
   const handleAddDocument = async () => {
     console.log('Current document state:', currentDocument);
-    if (!currentDocument.id.trim() || !currentDocument.reportype.trim() || !currentDocument.directorateId.trim()) {
-      setSnackbarMessage('Document ID, report type, and directorate are required');
+    if (!currentDocument.reportype.trim() || !currentDocument.directorateId.trim()) {
+      setSnackbarMessage('Report type and directorate are required');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
       return;
     }
     try {
       const payload = {
-        id: currentDocument.id.trim(),
         reportype: currentDocument.reportype.trim(),
         directorateId: currentDocument.directorateId.trim(),
       };
@@ -273,12 +269,12 @@ export default function Document() {
         status === 403
           ? 'You need admin privileges to add a document'
           : status === 404
-          ? `Directorate with ID "${currentDocument.directorateId}" not found. Ensure the selected directorate exists.`
-          : status === 409
-          ? `Document ID "${currentDocument.id}" already exists`
-          : status === 400
-          ? error.response?.data?.message || 'Invalid document data. Ensure all fields are valid.'
-          : error.response?.data?.message || `Error adding document: ${error.response?.statusText || error.message}`;
+            ? `Directorate with ID "${currentDocument.directorateId}" not found. Ensure the selected directorate exists.`
+            : status === 409
+              ? `Document ID "${currentDocument.id}" already exists`
+              : status === 400
+                ? error.response?.data?.message || 'Invalid document data. Ensure all fields are valid.'
+                : error.response?.data?.message || `Error adding document: ${error.response?.statusText || error.message}`;
       setSnackbarMessage(msg);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
@@ -314,10 +310,10 @@ export default function Document() {
         status === 403
           ? 'You need admin privileges to update a document'
           : status === 404
-          ? `Directorate with ID "${currentDocument.directorateId}" not found. Ensure the selected directorate exists.`
-          : status === 400
-          ? error.response?.data?.message || 'Invalid document data. Ensure all fields are valid.'
-          : error.response?.data?.message || `Error updating document: ${error.response?.statusText || error.message}`;
+            ? `Directorate with ID "${currentDocument.directorateId}" not found. Ensure the selected directorate exists.`
+            : status === 400
+              ? error.response?.data?.message || 'Invalid document data. Ensure all fields are valid.'
+              : error.response?.data?.message || `Error updating document: ${error.response?.statusText || error.message}`;
       setSnackbarMessage(msg);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
@@ -360,8 +356,6 @@ export default function Document() {
                 <Box display="flex" justifyContent="center" my={2}>
                   <CircularProgress />
                 </Box>
-              ) : error && !documents.length ? (
-                <Typography color="error">{error}</Typography>
               ) : (
                 <StyledTableContainer component={Paper}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2 }}>
@@ -497,16 +491,17 @@ export default function Document() {
         <DialogTitle>{formMode === 'new' ? 'Add New Document' : 'Edit Document'}</DialogTitle>
         <DialogContent>
           <CForm className="row g-3">
-            <CCol xs={12}>
-              <CFormLabel htmlFor="id">Document ID</CFormLabel>
-              <CFormInput
-                id="id"
-                value={currentDocument.id}
-                onChange={handleChangeAdd}
-                placeholder="Enter document ID (e.g., DOC123)"
-                disabled={formMode === 'edit'}
-              />
-            </CCol>
+            {formMode === 'edit' && (
+              <CCol xs={12}>
+                <CFormLabel htmlFor="id">Document ID</CFormLabel>
+                <CFormInput
+                  id="id"
+                  value={currentDocument.id}
+                  readOnly
+                  disabled
+                />
+              </CCol>
+            )}
             <CCol xs={12}>
               <CFormLabel htmlFor="reportype">Report Type</CFormLabel>
               <CFormInput

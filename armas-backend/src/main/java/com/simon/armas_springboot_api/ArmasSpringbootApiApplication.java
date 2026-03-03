@@ -11,8 +11,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.domain.AuditorAware;
-// import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
-
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 @EnableConfigurationProperties(RsaKeyProperties.class)
 @SpringBootApplication
 // @EnableJpaAuditing(auditorAwareRef = "auditorAware")
@@ -32,5 +31,11 @@ public class ArmasSpringbootApiApplication {
     CommandLineRunner init(RoleService roleService) {
         return args -> roleService.initializeRolesAndPrivileges();
     }
-
+@Bean
+CommandLineRunner generatePassword(BCryptPasswordEncoder encoder) {
+    return args -> {
+        String hash = encoder.encode("Simon@1234");
+        System.out.println("BCrypt Hash: " + hash);
+    };
+}
 }

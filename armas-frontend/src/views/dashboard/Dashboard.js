@@ -109,15 +109,14 @@ const getGradient = (ctx, chartArea, colorStart, colorEnd) => {
   return gradient;
 };
 
-// default stats shape (kept same as original)
-const EMPTY_STATS = {
+// default stats shape
+const EMPTY_GLOBAL_STATS = {
   totalOrganizations: 0,
   totalReportTypes: 0,
-  totalDirectorates: 0,
-  totalDocuments: 0,
   totalUsers: 0,
-  reportTypeStats: {},
 };
+
+const EMPTY_REPORT_TYPE_STATS = {};
 
 // Memoized child for each report type (reduces rerenders & expensive chart prop recreation)
 const ReportTypeCard = React.memo(function ReportTypeCard({ reportType, counts }) {
@@ -231,8 +230,10 @@ const ReportTypeCard = React.memo(function ReportTypeCard({ reportType, counts }
 const Charts = () => {
   const [budgetYears, setBudgetYears] = useState([]);
   const [selectedFiscalYear, setSelectedFiscalYear] = useState('');
-  const [stats, setStats] = useState(EMPTY_STATS);
-  const [loading, setLoading] = useState(true); // kept single loading flag to preserve behavior
+  const [globalStats, setGlobalStats] = useState(EMPTY_GLOBAL_STATS);
+  const [reportTypeStats, setReportTypeStats] = useState(EMPTY_REPORT_TYPE_STATS);
+  const [globalLoading, setGlobalLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
@@ -253,27 +254,39 @@ const Charts = () => {
     };
   }, []);
 
-  // Fetch budget years (unchanged logic & error messages)
+  // Fetch budget years + global stats on mount (no fiscal year dependency)
   useEffect(() => {
-    setLoading(true);
-    axios
+    setGlobalLoading(true);
+    const budgetYearsPromise = axios
       .get('/transactions/budget-years')
       .then((response) => {
         const data = Array.isArray(response.data) ? response.data : [];
         if (!isMountedRef.current) return;
         setBudgetYears(data);
         if (data.length > 0) setSelectedFiscalYear(data[0].fiscalYear);
-        setLoading(false);
       })
       .catch((err) => {
         if (!isMountedRef.current) return;
         setError(`Failed to load budget years: ${err.response?.data?.message || err.message}`);
-        setBudgetYears([]);
-        setLoading(false);
       });
-  }, []);
 
-  // Fetch dashboard stats whenever selectedFiscalYear changes
+    const globalStatsPromise = axios
+      .get('/transactions/global-stats')
+      .then((response) => {
+        if (!isMountedRef.current) return;
+        setGlobalStats(response.data || EMPTY_GLOBAL_STATS);
+      })
+      .catch((err) => {
+        if (!isMountedRef.current) return;
+        console.error('Failed to load global stats:', err.response?.data?.message || err.message);
+      });
+
+    Promise.all([budgetYearsPromise, globalStatsPromise]).finally(() => {
+      if (isMountedRef.current) setGlobalLoading(false);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch fiscal-year-specific report type stats whenever selectedFiscalYear changes
   useEffect(() => {
     if (!selectedFiscalYear) return;
 
@@ -283,14 +296,13 @@ const Charts = () => {
       cancelTokenRef.current = null;
     }
 
-    // Keep existing loading semantics (set true then false)
-    setLoading(true);
+    setStatsLoading(true);
 
     // If cached, use it (fast path)
     const cached = statsCacheRef.current[selectedFiscalYear];
     if (cached) {
-      setStats(cached);
-      setLoading(false);
+      setReportTypeStats(cached);
+      setStatsLoading(false);
       return;
     }
 
@@ -304,17 +316,14 @@ const Charts = () => {
       })
       .then((response) => {
         if (!isMountedRef.current) return;
-        const payload = response.data || EMPTY_STATS;
+        const payload = response.data?.reportTypeStats || EMPTY_REPORT_TYPE_STATS;
         statsCacheRef.current[selectedFiscalYear] = payload; // cache result
-        setStats(payload);
-        setLoading(false);
+        setReportTypeStats(payload);
+        setStatsLoading(false);
       })
       .catch((err) => {
         if (!isMountedRef.current) return;
-        if (axios.isCancel(err)) {
-          // request was cancelled - do not treat as error
-          return;
-        }
+        if (axios.isCancel(err)) return;
         let errorMessage = 'Failed to load dashboard statistics.';
         if (err.response?.status === 404) {
           errorMessage = `No statistics available for fiscal year ${selectedFiscalYear}.`;
@@ -324,10 +333,9 @@ const Charts = () => {
           errorMessage = err.response?.data?.message || err.message;
         }
         setError(errorMessage);
-        setLoading(false);
+        setStatsLoading(false);
       });
 
-    // cleanup for this effect: cancel if fiscalYear changes before request completes
     return () => {
       if (cancelTokenRef.current) {
         cancelTokenRef.current.cancel('Fiscal year changed / effect cleanup');
@@ -340,14 +348,13 @@ const Charts = () => {
   const handleFiscalYearChange = useCallback((e) => {
     setSelectedFiscalYear(e.target.value);
     setError(null);
-    // keep original behavior of resetting stats while loading (preserve functionality)
-    setStats(EMPTY_STATS);
+    setReportTypeStats(EMPTY_REPORT_TYPE_STATS);
   }, []);
 
   const toggleDrawer = useCallback(() => setDrawerOpen((s) => !s), []);
 
-  // preserve original error-only-without-years UI
-  if (error && budgetYears.length === 0) {
+  // Show error only if global loading also failed and we have nothing
+  if (error && budgetYears.length === 0 && !globalLoading) {
     return (
       <Card sx={{ mb: 3 }}>
         <CardContent>
@@ -359,8 +366,8 @@ const Charts = () => {
     );
   }
 
-  // preserve original single-loading spinner UI
-  if (loading) {
+  // Show spinner only while global data (counts + budget years) are loading
+  if (globalLoading) {
     return (
       <Card sx={{ mb: 3 }}>
         <CardContent sx={{ textAlign: 'center' }}>
@@ -424,6 +431,7 @@ const Charts = () => {
                         value={selectedFiscalYear}
                         onChange={handleFiscalYearChange}
                         sx={{ borderRadius: 2, mt: 2 }}
+                        displayEmpty
                       >
                         <MenuItem value="">Choose a fiscal year</MenuItem>
                         {budgetYears.map((year) => (
@@ -433,6 +441,11 @@ const Charts = () => {
                         ))}
                       </Select>
                     </FormControl>
+                    {budgetYears.length === 0 && (
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        No budget years available. Please create one first.
+                      </Typography>
+                    )}
                   </CardContent>
                 </Card>
               </Grid>
@@ -447,7 +460,7 @@ const Charts = () => {
                         <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 1 }}>
                           Organizations
                         </Typography>
-                        <Typography variant="h5" color="primary">{stats.totalOrganizations}</Typography>
+                    <Typography variant="h5" color="primary">{globalStats.totalOrganizations}</Typography>
                       </Box>
                     </Box>
                   </CardContent>
@@ -463,7 +476,7 @@ const Charts = () => {
                         <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 1 }}>
                           Report types
                         </Typography>
-                        <Typography variant="h5" sx={{ color: 'success.main' }}>{stats.totalDocuments}</Typography>
+                        <Typography variant="h5" sx={{ color: 'success.main' }}>{globalStats.totalReportTypes}</Typography>
                       </Box>
                     </Box>
                   </CardContent>
@@ -478,7 +491,7 @@ const Charts = () => {
                         <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 1 }}>
                           Users
                         </Typography>
-                        <Typography variant="h5" sx={{ color: 'warning.main' }}>{stats.totalUsers}</Typography>
+                        <Typography variant="h5" sx={{ color: 'warning.main' }}>{globalStats.totalUsers}</Typography>
                       </Box>
                     </Box>
                   </CardContent>
@@ -486,34 +499,53 @@ const Charts = () => {
               </Grid>
 
               {/* Report Type Senders/Non-Senders Cards */}
-              {Object.entries(stats.reportTypeStats).map(([reportType, counts]) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={reportType}>
-                  <Card className="stat-card hrm-main-card primary">
-                    <CardContent sx={{ p: 2 }}>
-                      <Typography variant="h6" color="primary">{reportType}</Typography>
-                      <Box sx={{ mt: 2 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <CheckCircle sx={{ fontSize: 18, color: 'success.main', mr: 1 }} />
-                          <Typography variant="subtitle1">
-                            Senders: {counts.senders}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Cancel sx={{ fontSize: 18, color: 'danger.main', mr: 1 }} />
-                          <Typography variant="subtitle1">
-                            Non-Senders: {counts.nonSenders}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </CardContent>
-                  </Card>
+              {statsLoading ? (
+                <Grid item xs={12} sx={{ textAlign: 'center', py: 2 }}>
+                  <CircularProgress size={28} color="primary" />
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Loading report statistics...
+                  </Typography>
                 </Grid>
-              ))}
+              ) : (
+                <>
+                  {Object.entries(reportTypeStats).map(([reportType, counts]) => (
+                    <Grid item xs={12} sm={6} md={4} lg={3} key={reportType}>
+                      <Card className="stat-card hrm-main-card primary">
+                        <CardContent sx={{ p: 2 }}>
+                          <Typography variant="h6" color="primary">{reportType}</Typography>
+                          <Box sx={{ mt: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                              <CheckCircle sx={{ fontSize: 18, color: 'success.main', mr: 1 }} />
+                              <Typography variant="subtitle1">
+                                Senders: {counts.senders}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Cancel sx={{ fontSize: 18, color: 'danger.main', mr: 1 }} />
+                              <Typography variant="subtitle1">
+                                Non-Senders: {counts.nonSenders}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
 
-              {/* Charts for Each Report Type (memoized child used) */}
-              {Object.entries(stats.reportTypeStats).map(([reportType, counts]) => (
-                <ReportTypeCard key={`${reportType}-chart`} reportType={reportType} counts={counts} />
-              ))}
+                  {/* Charts for Each Report Type */}
+                  {Object.entries(reportTypeStats).map(([reportType, counts]) => (
+                    <ReportTypeCard key={`${reportType}-chart`} reportType={reportType} counts={counts} />
+                  ))}
+
+                  {!selectedFiscalYear && (
+                    <Grid item xs={12}>
+                      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                        Select a fiscal year to view report statistics.
+                      </Typography>
+                    </Grid>
+                  )}
+                </>
+              )}
             </Grid>
           </Box>
         </Box>

@@ -8,6 +8,7 @@ import com.simon.armas_springboot_api.repositories.DocumentRepository;
 import com.simon.armas_springboot_api.repositories.MasterTransactionRepository;
 import com.simon.armas_springboot_api.repositories.UserRepository;
 import com.simon.armas_springboot_api.services.MasterTransactionService;
+import com.simon.armas_springboot_api.clients.TranslationServiceClient;
 import com.simon.armas_springboot_api.dto.UserDTO;
 import com.simon.armas_springboot_api.models.User;
 import com.simon.armas_springboot_api.models.Organization;
@@ -69,6 +70,34 @@ public class MasterTransactionController {
 
     @Autowired
     private NotificationRepository notificationRepository;
+
+    @Autowired
+    private TranslationServiceClient translationServiceClient;
+
+    @GetMapping("/translations")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, String>> getTranslations(@RequestParam(defaultValue = "en") String lang) {
+        try {
+            Map<String, String> translations = translationServiceClient.getTranslations(lang);
+            return ResponseEntity.ok(translations);
+        } catch (Exception e) {
+            // Fallback empty translations on error
+            return ResponseEntity.ok(Collections.emptyMap());
+        }
+    }
+
+    @PostMapping("/translations")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> processTranslationsUpdate(
+            @RequestParam(defaultValue = "en") String lang,
+            @RequestBody Map<String, String> updates) {
+
+        TranslationServiceClient.TranslationUpdateRequest request = new TranslationServiceClient.TranslationUpdateRequest(
+                lang, updates);
+
+        translationServiceClient.updateTranslations(request);
+        return ResponseEntity.ok().build();
+    }
 
     @GetMapping("/notifications")
     @PreAuthorize("isAuthenticated()")

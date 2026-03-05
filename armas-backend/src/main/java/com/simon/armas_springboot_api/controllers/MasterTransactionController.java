@@ -8,6 +8,7 @@ import com.simon.armas_springboot_api.repositories.DocumentRepository;
 import com.simon.armas_springboot_api.repositories.MasterTransactionRepository;
 import com.simon.armas_springboot_api.repositories.UserRepository;
 import com.simon.armas_springboot_api.services.MasterTransactionService;
+import com.simon.armas_springboot_api.clients.TranslationServiceClient;
 import com.simon.armas_springboot_api.dto.UserDTO;
 import com.simon.armas_springboot_api.models.User;
 import com.simon.armas_springboot_api.models.Organization;
@@ -46,8 +47,9 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.Collections;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.apache.commons.lang3.StringUtils; 
+import org.apache.commons.lang3.StringUtils;
 import java.nio.file.Path;
+
 @RestController
 @RequestMapping("/transactions")
 public class MasterTransactionController {
@@ -68,6 +70,34 @@ public class MasterTransactionController {
 
     @Autowired
     private NotificationRepository notificationRepository;
+
+    @Autowired
+    private TranslationServiceClient translationServiceClient;
+
+    @GetMapping("/translations")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, String>> getTranslations(@RequestParam(defaultValue = "en") String lang) {
+        try {
+            Map<String, String> translations = translationServiceClient.getTranslations(lang);
+            return ResponseEntity.ok(translations);
+        } catch (Exception e) {
+            // Fallback empty translations on error
+            return ResponseEntity.ok(Collections.emptyMap());
+        }
+    }
+
+    @PostMapping("/translations")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> processTranslationsUpdate(
+            @RequestParam(defaultValue = "en") String lang,
+            @RequestBody Map<String, String> updates) {
+
+        TranslationServiceClient.TranslationUpdateRequest request = new TranslationServiceClient.TranslationUpdateRequest(
+                lang, updates);
+
+        translationServiceClient.updateTranslations(request);
+        return ResponseEntity.ok().build();
+    }
 
     @GetMapping("/notifications")
     @PreAuthorize("isAuthenticated()")
@@ -92,36 +122,37 @@ public class MasterTransactionController {
         return ResponseEntity.ok().build();
     }
 
-@PostMapping("/upload")
-@PreAuthorize("hasRole('USER')")
-public ResponseEntity<?> uploadFile(
-        @RequestParam("file") MultipartFile file,
-        @RequestParam("reportcategory") String reportcategory,
-        @RequestParam("budgetYearId") Long budgetYearId,
-        @RequestParam("transactiondocumentid") String transactionDocumentId,
-        Principal principal) {
-    try {
-        // Check file size (500MB = 500 * 1024 * 1024 bytes)
-        long maxFileSize = 500 * 1024 * 1024; // 500MB in bytes
-        if (file.getSize() > maxFileSize) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Your file exceeds maximum size of 500MB."));
-        }
+    @PostMapping("/upload")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<?> uploadFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("reportcategory") String reportcategory,
+            @RequestParam("budgetYearId") Long budgetYearId,
+            @RequestParam("transactiondocumentid") String transactionDocumentId,
+            Principal principal) {
+        try {
+            // Check file size (500MB = 500 * 1024 * 1024 bytes)
+            long maxFileSize = 500 * 1024 * 1024; // 500MB in bytes
+            if (file.getSize() > maxFileSize) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Your file exceeds maximum size of 500MB."));
+            }
 
-        MasterTransaction transaction = masterTransactionService.uploadFile(
-                file, budgetYearId, reportcategory, transactionDocumentId, principal);
-        return ResponseEntity.ok(transaction);
-    } catch (IllegalArgumentException e) {
-        return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-    } catch (DataIntegrityViolationException e) {
-        return ResponseEntity.badRequest().body(Map.of("error", "Database error: Possible duplicate entry or invalid data: " + e.getMessage()));
-    } catch (IOException e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Failed to store file: " + e.getMessage()));
-    } catch (Exception e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Unexpected error: " + e.getMessage()));
+            MasterTransaction transaction = masterTransactionService.uploadFile(
+                    file, budgetYearId, reportcategory, transactionDocumentId, principal);
+            return ResponseEntity.ok(transaction);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest().body(
+                    Map.of("error", "Database error: Possible duplicate entry or invalid data: " + e.getMessage()));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to store file: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Unexpected error: " + e.getMessage()));
+        }
     }
-}
 
     @GetMapping("/download/{id}/{type}")
     @PreAuthorize("hasAnyRole('APPROVER', 'SENIOR_AUDITOR', 'ARCHIVER', 'USER', 'MANAGER')")
@@ -138,16 +169,19 @@ public ResponseEntity<?> uploadFile(
 
         if ("letter".equalsIgnoreCase(type)) {
             boolean isArchiver = currentUser.getRoles().stream().anyMatch(r -> "ARCHIVER".equals(r.getDescription()));
-            boolean isUploader = transaction.getUser() != null && currentUser.getId().equals(transaction.getUser().getId());
-            boolean isManagerInOrg = currentUser.getRoles().stream().anyMatch(r -> "MANAGER".equals(r.getDescription())) &&
-                                    currentUser.getOrganization() != null &&
-                                    transaction.getOrganization() != null &&
-                                    currentUser.getOrganization().getId().equals(transaction.getOrganization().getId());
-            boolean isUserInDispatchedOrg = currentUser.getRoles().stream().anyMatch(r -> "USER".equals(r.getDescription())) &&
-                                            currentUser.getOrganization() != null &&
-                                            transaction.getDispatchedOrganizations().stream()
-                                                .anyMatch(org -> org.getId().equals(currentUser.getOrganization().getId()));
-            
+            boolean isUploader = transaction.getUser() != null
+                    && currentUser.getId().equals(transaction.getUser().getId());
+            boolean isManagerInOrg = currentUser.getRoles().stream().anyMatch(r -> "MANAGER".equals(r.getDescription()))
+                    &&
+                    currentUser.getOrganization() != null &&
+                    transaction.getOrganization() != null &&
+                    currentUser.getOrganization().getId().equals(transaction.getOrganization().getId());
+            boolean isUserInDispatchedOrg = currentUser.getRoles().stream()
+                    .anyMatch(r -> "USER".equals(r.getDescription())) &&
+                    currentUser.getOrganization() != null &&
+                    transaction.getDispatchedOrganizations().stream()
+                            .anyMatch(org -> org.getId().equals(currentUser.getOrganization().getId()));
+
             if (!isArchiver && !isUploader && !isManagerInOrg && !isUserInDispatchedOrg) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
             }
@@ -179,7 +213,8 @@ public ResponseEntity<?> uploadFile(
 
         Path path = Paths.get(filePath);
         if (!Files.exists(path)) {
-            System.err.println("File does not exist at path: " + filePath + " for transaction ID=" + id + ", type=" + type);
+            System.err.println(
+                    "File does not exist at path: " + filePath + " for transaction ID=" + id + ", type=" + type);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
 
@@ -211,31 +246,32 @@ public ResponseEntity<?> uploadFile(
         return ResponseEntity.ok(reports);
     }
 
-@PostMapping("/upload-letter/{transactionId}")
-@PreAuthorize("hasRole('ARCHIVER')")
-public ResponseEntity<?> uploadLetter(
-        @PathVariable Integer transactionId,
-        @RequestParam("letter") MultipartFile letter,
-        Principal principal) {
-    try {
-        // Check file size (500MB = 500 * 1024 * 1024 bytes)
-        long maxFileSize = 500 * 1024 * 1024; // 500MB in bytes
-        if (letter.getSize() > maxFileSize) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Your file exceeds maximum size of 500MB."));
-        }
+    @PostMapping("/upload-letter/{transactionId}")
+    @PreAuthorize("hasRole('ARCHIVER')")
+    public ResponseEntity<?> uploadLetter(
+            @PathVariable Integer transactionId,
+            @RequestParam("letter") MultipartFile letter,
+            Principal principal) {
+        try {
+            // Check file size (500MB = 500 * 1024 * 1024 bytes)
+            long maxFileSize = 500 * 1024 * 1024; // 500MB in bytes
+            if (letter.getSize() > maxFileSize) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Your file exceeds maximum size of 500MB."));
+            }
 
-        MasterTransaction transaction = masterTransactionService.uploadLetter(transactionId, letter, principal.getName());
-        return ResponseEntity.ok(transaction);
-    } catch (IllegalArgumentException e) {
-        return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-    } catch (IOException e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Failed to store file: " + e.getMessage()));
-    } catch (Exception e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Unexpected error: " + e.getMessage()));
+            MasterTransaction transaction = masterTransactionService.uploadLetter(transactionId, letter,
+                    principal.getName());
+            return ResponseEntity.ok(transaction);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to store file: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Unexpected error: " + e.getMessage()));
+        }
     }
-}
 
     @GetMapping("/sent-reports")
     @PreAuthorize("hasAnyRole('APPROVER', 'SENIOR_AUDITOR', 'ARCHIVER')")
@@ -275,15 +311,17 @@ public ResponseEntity<?> uploadLetter(
                 principal.getName());
         return ResponseEntity.ok(transaction);
     }
-@PostMapping("/assign-approver/{transactionId}")
-@PreAuthorize("hasRole('ARCHIVER')")
-public ResponseEntity<MasterTransaction> assignApprover(@PathVariable Integer transactionId,
-        @RequestParam String approverUsername,
-        Principal principal) {
-    MasterTransaction transaction = masterTransactionService.assignApprover(transactionId, approverUsername,
-            principal.getName());
-    return ResponseEntity.ok(transaction);
-}
+
+    @PostMapping("/assign-approver/{transactionId}")
+    @PreAuthorize("hasRole('ARCHIVER')")
+    public ResponseEntity<MasterTransaction> assignApprover(@PathVariable Integer transactionId,
+            @RequestParam String approverUsername,
+            Principal principal) {
+        MasterTransaction transaction = masterTransactionService.assignApprover(transactionId, approverUsername,
+                principal.getName());
+        return ResponseEntity.ok(transaction);
+    }
+
     @PostMapping("/submit-findings/{transactionId}")
     @PreAuthorize("hasRole('SENIOR_AUDITOR')")
     public ResponseEntity<?> submitFindings(
@@ -300,9 +338,11 @@ public ResponseEntity<MasterTransaction> assignApprover(@PathVariable Integer tr
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Failed to store file: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to store file: " + e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "An unexpected error occurred: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An unexpected error occurred: " + e.getMessage()));
         }
     }
 
@@ -327,7 +367,8 @@ public ResponseEntity<MasterTransaction> assignApprover(@PathVariable Integer tr
             @PathVariable Integer transactionId,
             @RequestParam(value = "approvalDocument", required = false) org.springframework.web.multipart.MultipartFile approvalDocument,
             Principal principal) throws IOException {
-        MasterTransaction transaction = masterTransactionService.approveReport(transactionId, principal.getName(), approvalDocument);
+        MasterTransaction transaction = masterTransactionService.approveReport(transactionId, principal.getName(),
+                approvalDocument);
         return ResponseEntity.ok(transaction);
     }
 
@@ -422,7 +463,8 @@ public ResponseEntity<MasterTransaction> assignApprover(@PathVariable Integer tr
             @RequestParam String reportype,
             @RequestParam String fiscalYear,
             @RequestParam String orgId) {
-        List<MasterTransactionDTO> reports = masterTransactionService.getReportsByOrgAndFilters(reportype, fiscalYear, orgId);
+        List<MasterTransactionDTO> reports = masterTransactionService.getReportsByOrgAndFilters(reportype, fiscalYear,
+                orgId);
         return ResponseEntity.ok(reports);
     }
 
@@ -458,15 +500,26 @@ public ResponseEntity<MasterTransaction> assignApprover(@PathVariable Integer tr
         return ResponseEntity.ok(senders);
     }
 
+    @GetMapping("/global-stats")
+    @PreAuthorize("hasAnyRole('SENIOR_AUDITOR', 'APPROVER', 'ARCHIVER', 'ADMIN', 'USER', 'MANAGER')")
+    public ResponseEntity<Map<String, Object>> getGlobalStats() {
+        try {
+            Map<String, Object> stats = new HashMap<>();
+            stats.put("totalOrganizations", masterTransactionService.getTotalOrganizations());
+            stats.put("totalReportTypes", masterTransactionService.getTotalReportTypes());
+            stats.put("totalUsers", userRepository.count());
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to fetch global stats: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/dashboard-stats")
     @PreAuthorize("hasAnyRole('SENIOR_AUDITOR', 'APPROVER', 'ARCHIVER', 'ADMIN', 'USER', 'MANAGER')")
     public ResponseEntity<Map<String, Object>> getDashboardStats(@RequestParam String fiscalYear) {
         try {
             Map<String, Object> stats = new HashMap<>();
-            stats.put("totalOrganizations", masterTransactionService.getTotalOrganizations());
-            stats.put("totalReportTypes", masterTransactionService.getTotalReportTypes());
-            stats.put("totalDocuments", masterTransactionService.getTotalReportTypes());
-            stats.put("totalUsers", userRepository.count());
             stats.put("reportTypeStats", masterTransactionService.getAllReportTypeStats(fiscalYear));
             return ResponseEntity.ok(stats);
         } catch (Exception e) {
@@ -489,14 +542,14 @@ public ResponseEntity<MasterTransaction> assignApprover(@PathVariable Integer tr
     @GetMapping("/letters")
     @PreAuthorize("hasAnyRole('USER', 'MANAGER', 'ARCHIVER')")
     public ResponseEntity<List<MasterTransactionDTO>> getLettersForOrganization(
-            Principal principal, 
+            Principal principal,
             @RequestParam(value = "type", required = false) String type) {
         User user = userRepository.findByUsername(principal.getName());
         if (user == null || user.getOrganization() == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Collections.emptyList());
         }
         String orgId = user.getOrganization().getId();
-        
+
         List<MasterTransaction> transactions = new ArrayList<>();
         if ("dispatched".equalsIgnoreCase(type)) {
             transactions = masterTransactionRepository.findDispatchedLettersByOrganization(orgId);
@@ -504,10 +557,10 @@ public ResponseEntity<MasterTransaction> assignApprover(@PathVariable Integer tr
             transactions = masterTransactionRepository.findTransactionsWithLettersByOrganization(orgId);
             transactions.addAll(masterTransactionRepository.findDispatchedLettersByOrganization(orgId));
         }
-        
+
         List<MasterTransactionDTO> dtos = transactions.stream()
-            .map(MasterTransactionDTO::new)
-            .collect(Collectors.toList());
+                .map(MasterTransactionDTO::new)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
 
@@ -518,7 +571,8 @@ public ResponseEntity<MasterTransaction> assignApprover(@PathVariable Integer tr
             @RequestParam String auditorUsername,
             Principal principal) {
         try {
-            MasterTransaction transaction = masterTransactionService.reassignTask(transactionId, auditorUsername, principal.getName());
+            MasterTransaction transaction = masterTransactionService.reassignTask(transactionId, auditorUsername,
+                    principal.getName());
             return ResponseEntity.ok(transaction);
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -529,81 +583,91 @@ public ResponseEntity<MasterTransaction> assignApprover(@PathVariable Integer tr
     }
 
     @GetMapping("/advanced-filters")
-@PreAuthorize("hasAnyRole('ARCHIVER', 'SENIOR_AUDITOR', 'APPROVER', 'ADMIN')")
-public ResponseEntity<?> getAdvancedFilters(
-        @RequestParam String filterType,
-        @RequestParam(required = false) String reportype,
-        @RequestParam(required = false) String fiscalYear,
-        @RequestParam(required = false) String orgId) {
-    try {
-        switch (filterType) {
-            case "report-non-senders":
-                if (StringUtils.isBlank(reportype) || StringUtils.isBlank(fiscalYear)) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "Report type and fiscal year are required"));
-                }
-                List<Organization> nonSenders = masterTransactionService.getReportNonSenders(reportype, fiscalYear);
-                return ResponseEntity.ok(nonSenders);
-            case "reports-by-org":
-                if (StringUtils.isBlank(reportype) || StringUtils.isBlank(fiscalYear) || StringUtils.isBlank(orgId)) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "Report type, fiscal year, and organization ID are required"));
-                }
-                List<MasterTransactionDTO> reports = masterTransactionService.getReportsByOrgAndFilters(reportype, fiscalYear, orgId);
-                return ResponseEntity.ok(reports);
-            case "orgs-with-reports":
-                List<Organization> orgsWithReports = masterTransactionService.getAllOrganizationsWithReports();
-                return ResponseEntity.ok(orgsWithReports);
-            case "feedback-non-senders":
-                if (StringUtils.isBlank(reportype) || StringUtils.isBlank(fiscalYear)) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "Report type and fiscal year are required"));
-                }
-                List<Organization> feedbackNonSenders = masterTransactionService.getFeedbackNonSenders(reportype, fiscalYear);
-                return ResponseEntity.ok(feedbackNonSenders);
-            case "feedback-senders":
-                if (StringUtils.isBlank(reportype) || StringUtils.isBlank(fiscalYear)) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "Report type and fiscal year are required"));
-                }
-                List<MasterTransactionDTO> feedbackSenders = masterTransactionService.getFeedbackSenders(reportype, fiscalYear);
-                return ResponseEntity.ok(feedbackSenders);
-            default:
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid filter type"));
+    @PreAuthorize("hasAnyRole('ARCHIVER', 'SENIOR_AUDITOR', 'APPROVER', 'ADMIN')")
+    public ResponseEntity<?> getAdvancedFilters(
+            @RequestParam String filterType,
+            @RequestParam(required = false) String reportype,
+            @RequestParam(required = false) String fiscalYear,
+            @RequestParam(required = false) String orgId) {
+        try {
+            switch (filterType) {
+                case "report-non-senders":
+                    if (StringUtils.isBlank(reportype) || StringUtils.isBlank(fiscalYear)) {
+                        return ResponseEntity.badRequest()
+                                .body(Map.of("error", "Report type and fiscal year are required"));
+                    }
+                    List<Organization> nonSenders = masterTransactionService.getReportNonSenders(reportype, fiscalYear);
+                    return ResponseEntity.ok(nonSenders);
+                case "reports-by-org":
+                    if (StringUtils.isBlank(reportype) || StringUtils.isBlank(fiscalYear)
+                            || StringUtils.isBlank(orgId)) {
+                        return ResponseEntity.badRequest()
+                                .body(Map.of("error", "Report type, fiscal year, and organization ID are required"));
+                    }
+                    List<MasterTransactionDTO> reports = masterTransactionService.getReportsByOrgAndFilters(reportype,
+                            fiscalYear, orgId);
+                    return ResponseEntity.ok(reports);
+                case "orgs-with-reports":
+                    List<Organization> orgsWithReports = masterTransactionService.getAllOrganizationsWithReports();
+                    return ResponseEntity.ok(orgsWithReports);
+                case "feedback-non-senders":
+                    if (StringUtils.isBlank(reportype) || StringUtils.isBlank(fiscalYear)) {
+                        return ResponseEntity.badRequest()
+                                .body(Map.of("error", "Report type and fiscal year are required"));
+                    }
+                    List<Organization> feedbackNonSenders = masterTransactionService.getFeedbackNonSenders(reportype,
+                            fiscalYear);
+                    return ResponseEntity.ok(feedbackNonSenders);
+                case "feedback-senders":
+                    if (StringUtils.isBlank(reportype) || StringUtils.isBlank(fiscalYear)) {
+                        return ResponseEntity.badRequest()
+                                .body(Map.of("error", "Report type and fiscal year are required"));
+                    }
+                    List<MasterTransactionDTO> feedbackSenders = masterTransactionService.getFeedbackSenders(reportype,
+                            fiscalYear);
+                    return ResponseEntity.ok(feedbackSenders);
+                default:
+                    return ResponseEntity.badRequest().body(Map.of("error", "Invalid filter type"));
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to fetch data: " + e.getMessage()));
         }
-    } catch (IllegalArgumentException e) {
-        return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-    } catch (Exception e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Failed to fetch data: " + e.getMessage()));
     }
-}
-@PostMapping("/dispatch-letter")
-@PreAuthorize("hasRole('APPROVER')")
-public ResponseEntity<?> dispatchDocument(
-        @RequestParam("letter") MultipartFile letter,
-        @RequestParam("organizationIds") String organizationIdsJson,
-        Principal principal) {
-    try {
-        // Check file size (500MB = 500 * 1024 * 1024 bytes)
-        long maxFileSize = 500 * 1024 * 1024; // 500MB in bytes
-        if (letter.getSize() > maxFileSize) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Your file exceeds maximum size of 500MB."));
+
+    @PostMapping("/dispatch-letter")
+    @PreAuthorize("hasRole('APPROVER')")
+    public ResponseEntity<?> dispatchDocument(
+            @RequestParam("letter") MultipartFile letter,
+            @RequestParam("organizationIds") String organizationIdsJson,
+            Principal principal) {
+        try {
+            // Check file size (500MB = 500 * 1024 * 1024 bytes)
+            long maxFileSize = 500 * 1024 * 1024; // 500MB in bytes
+            if (letter.getSize() > maxFileSize) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Your file exceeds maximum size of 500MB."));
+            }
+
+            // Parse organizationIds from JSON string
+            ObjectMapper objectMapper = new ObjectMapper();
+            List<String> organizationIds = objectMapper.readValue(organizationIdsJson,
+                    new TypeReference<List<String>>() {
+                    });
+
+            MasterTransaction transaction = masterTransactionService.dispatchDocumentToOrganizations(
+                    letter, organizationIds, principal.getName());
+            return ResponseEntity.ok(transaction);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to store file: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Unexpected error: " + e.getMessage()));
         }
-
-        // Parse organizationIds from JSON string
-        ObjectMapper objectMapper = new ObjectMapper();
-        List<String> organizationIds = objectMapper.readValue(organizationIdsJson, new TypeReference<List<String>>() {});
-
-        MasterTransaction transaction = masterTransactionService.dispatchDocumentToOrganizations(
-                letter, organizationIds, principal.getName());
-        return ResponseEntity.ok(transaction);
-    } catch (IllegalArgumentException e) {
-        return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-    } catch (IOException e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Failed to store file: " + e.getMessage()));
-    } catch (Exception e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Unexpected error: " + e.getMessage()));
     }
-}
-
 
 }

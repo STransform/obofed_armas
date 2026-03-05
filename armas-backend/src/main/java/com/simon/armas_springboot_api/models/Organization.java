@@ -2,18 +2,23 @@ package com.simon.armas_springboot_api.models;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.Id;
+import com.oss2.translationclient.annotation.TranslatableField;
+import com.oss2.translationclient.listener.TranslationEntityListener;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
+@EntityListeners(TranslationEntityListener.class)
 @Data
 public class Organization {
 
 	@Id
 	@Column(name = "org_id")
 	private String id;
+	@TranslatableField
 	private String orgname;
 	private String email;
 	private String telephone;

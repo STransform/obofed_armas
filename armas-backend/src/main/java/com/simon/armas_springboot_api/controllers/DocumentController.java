@@ -16,14 +16,12 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import org.springframework.dao.DataIntegrityViolationException;
 import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/documents")
-@CrossOrigin(
-    origins = {"http://localhost:3000", "http://localhost:3001"},
-    methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS},
-    allowedHeaders = {"Authorization", "Content-Type", "*"},
-    allowCredentials = "true"
-)
+@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:3001" }, methods = { RequestMethod.GET,
+        RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE,
+        RequestMethod.OPTIONS }, allowedHeaders = { "Authorization", "Content-Type", "*" }, allowCredentials = "true")
 public class DocumentController {
 
     private static final Logger logger = LoggerFactory.getLogger(DocumentController.class);
@@ -40,7 +38,8 @@ public class DocumentController {
         DocumentDTO dto = new DocumentDTO();
         dto.setId(document.getId());
         dto.setReportype(document.getReportype());
-        dto.setDirectoratename(document.getDirectorate() != null ? document.getDirectorate().getDirectoratename() : null);
+        dto.setDirectoratename(
+                document.getDirectorate() != null ? document.getDirectorate().getDirectoratename() : null);
         return dto;
     }
 
@@ -55,7 +54,7 @@ public class DocumentController {
         } catch (Exception e) {
             logger.error("Error fetching documents: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Failed to fetch documents: " + e.getMessage());
+                    .body("Failed to fetch documents: " + e.getMessage());
         }
     }
 
@@ -75,21 +74,17 @@ public class DocumentController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> createDocument(@RequestBody DocumentRequest documentRequest) {
         logger.info("Received document request: {}", documentRequest);
-        if (documentRequest.getId() == null || documentRequest.getId().trim().isEmpty() ||
-            documentRequest.getReportype() == null || documentRequest.getReportype().trim().isEmpty() ||
-            documentRequest.getDirectorateId() == null || documentRequest.getDirectorateId().trim().isEmpty()) {
+        if (documentRequest.getReportype() == null || documentRequest.getReportype().trim().isEmpty() ||
+                documentRequest.getDirectorateId() == null || documentRequest.getDirectorateId().trim().isEmpty()) {
             logger.warn("Invalid document request: missing or empty fields");
-            return ResponseEntity.badRequest().body("Document ID, report type, and directorate ID are required");
+            return ResponseEntity.badRequest().body("Report type and directorate ID are required");
         }
-        String id = documentRequest.getId().trim();
+        // Auto-generate a unique ID — frontend no longer needs to supply one
+        String id = java.util.UUID.randomUUID().toString();
         String reportype = documentRequest.getReportype().trim();
         String directorateId = documentRequest.getDirectorateId().trim();
-        logger.info("Processed document ID: '{}', reportype: '{}', directorateId: '{}'", id, reportype, directorateId);
-
-        if (documentService.getDocumentById(id) != null) {
-            logger.warn("Document with ID {} already exists", id);
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Document ID already exists: " + id);
-        }
+        logger.info("Auto-generated document ID: '{}', reportype: '{}', directorateId: '{}'", id, reportype,
+                directorateId);
 
         if (documentService.existsByReportype(reportype)) {
             logger.warn("Document with reportype {} already exists", reportype);
@@ -116,30 +111,31 @@ public class DocumentController {
             String errorMessage = e.getRootCause() != null ? e.getRootCause().getMessage() : e.getMessage();
             if (errorMessage.contains("foreign key constraint")) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Invalid directorate ID: " + directorateId);
+                        .body("Invalid directorate ID: " + directorateId);
             } else if (errorMessage.contains("unique constraint") || errorMessage.contains("reportype")) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("Report type already exists: " + reportype);
+                        .body("Report type already exists: " + reportype);
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body("Database error: " + errorMessage);
+                    .body("Database error: " + errorMessage);
         } catch (Exception e) {
             logger.error("Unexpected error creating document: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Failed to create document: " + e.getMessage());
+                    .body("Failed to create document: " + e.getMessage());
         }
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Object> updateDocument(@PathVariable String id, @RequestBody DocumentRequest documentRequest) {
+    public ResponseEntity<Object> updateDocument(@PathVariable String id,
+            @RequestBody DocumentRequest documentRequest) {
         logger.info("Updating document with ID: {}", id);
         if (!id.equals(documentRequest.getId()) ||
-            documentRequest.getReportype() == null || documentRequest.getReportype().trim().isEmpty() ||
-            documentRequest.getDirectorateId() == null || documentRequest.getDirectorateId().trim().isEmpty()) {
+                documentRequest.getReportype() == null || documentRequest.getReportype().trim().isEmpty() ||
+                documentRequest.getDirectorateId() == null || documentRequest.getDirectorateId().trim().isEmpty()) {
             logger.warn("Invalid update request for document ID: {}", id);
             return ResponseEntity.badRequest()
-                .body("Document ID in path and body must match, and report type and directorate ID are required");
+                    .body("Document ID in path and body must match, and report type and directorate ID are required");
         }
         Document existing = documentService.getDocumentById(id);
         if (existing == null) {
@@ -157,7 +153,7 @@ public class DocumentController {
         if (directorate == null) {
             logger.warn("Directorate with ID '{}' not found for update", documentRequest.getDirectorateId());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body("Directorate not found: " + documentRequest.getDirectorateId());
+                    .body("Directorate not found: " + documentRequest.getDirectorateId());
         }
 
         try {
@@ -172,17 +168,17 @@ public class DocumentController {
             String errorMessage = e.getRootCause() != null ? e.getRootCause().getMessage() : e.getMessage();
             if (errorMessage.contains("foreign key constraint")) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Invalid directorate ID: " + documentRequest.getDirectorateId());
+                        .body("Invalid directorate ID: " + documentRequest.getDirectorateId());
             } else if (errorMessage.contains("unique constraint") || errorMessage.contains("reportype")) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("Report type already exists: " + reportype);
+                        .body("Report type already exists: " + reportype);
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body("Database error: " + errorMessage);
+                    .body("Database error: " + errorMessage);
         } catch (Exception e) {
             logger.error("Error updating document: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Failed to update document: " + e.getMessage());
+                    .body("Failed to update document: " + e.getMessage());
         }
     }
 
@@ -202,7 +198,7 @@ public class DocumentController {
         } catch (Exception e) {
             logger.error("Error deleting document: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Failed to delete document: " + e.getMessage());
+                    .body("Failed to delete document: " + e.getMessage());
         }
     }
 }

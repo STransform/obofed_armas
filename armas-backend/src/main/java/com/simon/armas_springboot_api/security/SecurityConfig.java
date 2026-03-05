@@ -49,6 +49,7 @@ public class SecurityConfig {
     private final RsaKeyProperties properties;
     private final UserDetailsService userDetailsService;
     private static final Logger log = Logger.getLogger(SecurityConfig.class.getName());
+
     @Autowired
     public SecurityConfig(RsaKeyProperties properties, UserDetailsService userDetailsService) {
         this.properties = properties;
@@ -56,64 +57,74 @@ public class SecurityConfig {
     }
 
     @Bean
-public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-    return httpSecurity
-        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-        .csrf(csrf -> csrf.disable())
-        .authorizeHttpRequests(auth -> auth
-            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-            .requestMatchers("/register", "/login").permitAll()
-            .requestMatchers(HttpMethod.POST, "/users").permitAll()
-            .requestMatchers(HttpMethod.GET, "/users").permitAll()
-            .requestMatchers("/roles/**").permitAll()
-            .requestMatchers("/organizations/**").hasAnyRole("ADMIN", "SENIOR_AUDITOR", "APPROVER")
-            .requestMatchers("/directorates/**").hasRole("ADMIN")
-            .requestMatchers("/documents/**").hasRole("ADMIN")
-            .requestMatchers("/budgetyears/**").hasRole("ADMIN")
-            .requestMatchers("/me/**").hasAnyRole("ADMIN", "USER", "ARCHIVER", "SENIOR_AUDITOR", "APPROVER")
-            .requestMatchers("/budget-years/**").hasAnyRole("ADMIN", "USER", "ARCHIVER", "SENIOR_AUDITOR", "APPROVER")
-            .requestMatchers("/master-transactions/**").hasRole("ADMIN")
-            .requestMatchers("/userPrivilegeAssignments/**").hasRole("ADMIN")
-            .requestMatchers("/buttons/forms/**").hasRole("USER")
-            .requestMatchers("/buttons/charts/**").hasRole("USER")
-            .requestMatchers("/transactions/upload").hasAnyRole("USER", "ADMIN")
-            .requestMatchers("/transactions/sent-reports").hasAnyRole("ARCHIVER", "SENIOR_AUDITOR", "APPROVER")
-            .requestMatchers("transactions/advanced-filters").hasAnyRole("ARCHIVER", "SENIOR_AUDITOR", "APPROVER", "ADMIN")
-            .requestMatchers("/transactions/listdocuments").hasAnyRole("ADMIN", "USER", "ARCHIVER", "SENIOR_AUDITOR", "APPROVER")
-            .requestMatchers("/transactions/users-by-role/**").hasAnyRole("ARCHIVER", "SENIOR_AUDITOR", "APPROVER")
-            .requestMatchers("/transactions/assign/**").hasRole("ARCHIVER")
-            .requestMatchers("/transactions/assigned-by-archiver").hasRole("ARCHIVER") 
-            .requestMatchers("/transactions/reassign/**").hasRole("ARCHIVER")
-            .requestMatchers("/transactions/submit-findings/**").hasRole("SENIOR_AUDITOR")
-            .requestMatchers("/transactions/approve/**").hasRole("APPROVER")
-            .requestMatchers("/transactions/reject/**").hasRole("APPROVER")
-            .requestMatchers("/transactions/file-history/**").hasRole("USER")
-            .requestMatchers("/transactions/auditor-tasks/**").hasAnyRole("SENIOR_AUDITOR", "APPROVER", "ADMIN", "ARCHIVER", "USER")
-            .requestMatchers("/transactions/tasks").permitAll()
-            // .requestMatchers("/transactions/letters").hasAuthority("VIEW_LETTERS")
-             .requestMatchers("/transactions/letters").hasAnyRole("USER", "MANAGER", "ARCHIVER")
-            .requestMatchers("/transactions/approved-reports").hasAnyRole("APPROVER", "ARCHIVER", "SENIOR_AUDITOR")
-            .requestMatchers("/transactions/download/**").hasAnyRole("ARCHIVER", "SENIOR_AUDITOR", "APPROVER", "USER", "MANAGER")
-            .requestMatchers("/transactions/dashboard-stats").hasAnyRole("USER", "ADMIN", "SENIOR_AUDITOR", "APPROVER", "ARCHIVER","MANAGER") 
-            .requestMatchers("/users/change-password").hasAnyRole("USER", "ADMIN", "SENIOR_AUDITOR", "APPROVER", "ARCHIVER")
-            .anyRequest().authenticated()
-        )
-        .oauth2ResourceServer(oauth2 -> oauth2
-            .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
-            .authenticationEntryPoint((request, response, authException) -> {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
-            })
-        )
-        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .httpBasic(withDefaults())
-        .exceptionHandling(exceptions -> exceptions
-            .authenticationEntryPoint((request, response, authException) -> {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication required");
-            })
-        )
-        .build();
-}
-   @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
+        return httpSecurity
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/register", "/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/users").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/users").permitAll()
+                        .requestMatchers("/roles/**").permitAll()
+                        .requestMatchers("/organizations/**").hasAnyRole("ADMIN", "SENIOR_AUDITOR", "APPROVER")
+                        .requestMatchers("/directorates/**").hasRole("ADMIN")
+                        .requestMatchers("/documents/**").hasRole("ADMIN")
+                        .requestMatchers("/budgetyears/**").hasRole("ADMIN")
+                        .requestMatchers("/me/**").hasAnyRole("ADMIN", "USER", "ARCHIVER", "SENIOR_AUDITOR", "APPROVER")
+                        .requestMatchers("/budget-years/**")
+                        .hasAnyRole("ADMIN", "USER", "ARCHIVER", "SENIOR_AUDITOR", "APPROVER")
+                        .requestMatchers("/master-transactions/**").hasRole("ADMIN")
+                        .requestMatchers("/userPrivilegeAssignments/**").hasRole("ADMIN")
+                        .requestMatchers("/buttons/forms/**").hasRole("USER")
+                        .requestMatchers("/buttons/charts/**").hasRole("USER")
+                        .requestMatchers("/transactions/upload").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/transactions/sent-reports")
+                        .hasAnyRole("ARCHIVER", "SENIOR_AUDITOR", "APPROVER")
+                        .requestMatchers("transactions/advanced-filters")
+                        .hasAnyRole("ARCHIVER", "SENIOR_AUDITOR", "APPROVER", "ADMIN")
+                        .requestMatchers("/transactions/listdocuments")
+                        .hasAnyRole("ADMIN", "USER", "ARCHIVER", "SENIOR_AUDITOR", "APPROVER")
+                        .requestMatchers("/transactions/users-by-role/**")
+                        .hasAnyRole("ARCHIVER", "SENIOR_AUDITOR", "APPROVER")
+                        .requestMatchers("/transactions/assign/**").hasRole("ARCHIVER")
+                        .requestMatchers("/transactions/assigned-by-archiver").hasRole("ARCHIVER")
+                        .requestMatchers("/transactions/reassign/**").hasRole("ARCHIVER")
+                        .requestMatchers("/transactions/submit-findings/**").hasRole("SENIOR_AUDITOR")
+                        .requestMatchers("/transactions/approve/**").hasRole("APPROVER")
+                        .requestMatchers("/transactions/reject/**").hasRole("APPROVER")
+                        .requestMatchers("/transactions/file-history/**").hasRole("USER")
+                        .requestMatchers("/transactions/auditor-tasks/**")
+                        .hasAnyRole("SENIOR_AUDITOR", "APPROVER", "ADMIN", "ARCHIVER", "USER")
+                        .requestMatchers("/transactions/tasks").permitAll()
+                        // .requestMatchers("/transactions/letters").hasAuthority("VIEW_LETTERS")
+                        .requestMatchers("/transactions/letters").hasAnyRole("USER", "MANAGER", "ARCHIVER")
+                        .requestMatchers("/transactions/approved-reports")
+                        .hasAnyRole("APPROVER", "ARCHIVER", "SENIOR_AUDITOR")
+                        .requestMatchers("/transactions/download/**")
+                        .hasAnyRole("ARCHIVER", "SENIOR_AUDITOR", "APPROVER", "USER", "MANAGER")
+                        .requestMatchers("/transactions/dashboard-stats")
+                        .hasAnyRole("USER", "ADMIN", "SENIOR_AUDITOR", "APPROVER", "ARCHIVER", "MANAGER")
+                        .requestMatchers("/transactions/global-stats")
+                        .hasAnyRole("USER", "ADMIN", "SENIOR_AUDITOR", "APPROVER", "ARCHIVER", "MANAGER")
+                        .requestMatchers("/users/change-password")
+                        .hasAnyRole("USER", "ADMIN", "SENIOR_AUDITOR", "APPROVER", "ARCHIVER")
+                        .anyRequest().authenticated())
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                        }))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .httpBasic(withDefaults())
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication required");
+                        }))
+                .build();
+    }
+
+    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));

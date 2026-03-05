@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.UUID;
 import jakarta.persistence.*;
 
+import com.oss2.translationclient.annotation.TranslatableField;
+import com.oss2.translationclient.listener.TranslationEntityListener;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 @Table(name = "directorate")
+@EntityListeners(TranslationEntityListener.class)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,6 +22,7 @@ public class Directorate {
     @Id
     private String id;
 
+    @TranslatableField
     private String directoratename;
     private String telephone;
     private String email;
@@ -27,9 +31,7 @@ public class Directorate {
     @JsonManagedReference
     private List<Document> documents;
 
-   
-
-     public String getId() {
+    public String getId() {
         return id;
     }
 

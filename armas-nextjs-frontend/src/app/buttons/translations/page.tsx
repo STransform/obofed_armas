@@ -15,6 +15,8 @@ import {
     Globe,
 } from "lucide-react";
 import axiosInstance from "../../../lib/axios";
+import { Sidebar } from "@/components/Sidebar";
+import { Header } from "@/components/Header";
 
 // ──────────────────────────────────────────────
 // Types
@@ -259,7 +261,7 @@ function TranslationEditorView({
     const [rows, setRows] = useState<TranslationRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [filter, setFilter] = useState<FilterType>("all");
+    const [filter, setFilter] = useState<FilterType>("untranslated");
     const [search, setSearch] = useState("");
     const [status, setStatus] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -573,17 +575,23 @@ function TranslationsController() {
 
 export default function TranslationsPage() {
     return (
-        <div className="p-6">
-            <Suspense fallback={
-                <div className="flex items-center justify-center h-64">
-                    <div className="text-slate-500 flex items-center gap-2">
-                        <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                        Loading...
-                    </div>
-                </div>
-            }>
-                <TranslationsController />
-            </Suspense>
+        <div className="flex h-screen bg-gray-50 overflow-hidden">
+            <Sidebar />
+            <div className="flex-1 flex flex-col overflow-hidden">
+                <Header />
+                <main className="flex-1 overflow-y-auto p-6 w-full">
+                    <Suspense fallback={
+                        <div className="flex items-center justify-center h-64">
+                            <div className="text-slate-500 flex items-center gap-2">
+                                <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                                Loading...
+                            </div>
+                        </div>
+                    }>
+                        <TranslationsController />
+                    </Suspense>
+                </main>
+            </div>
         </div>
     );
 }

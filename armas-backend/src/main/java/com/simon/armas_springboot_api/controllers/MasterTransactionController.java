@@ -77,13 +77,36 @@ public class MasterTransactionController {
     @GetMapping("/translations")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, String>> getTranslations(@RequestParam(defaultValue = "en") String lang) {
+        Map<String, String> finalTranslations = new HashMap<>();
+
         try {
-            Map<String, String> translations = translationServiceClient.getTranslations(lang);
-            return ResponseEntity.ok(translations);
+            // Load static strings
+            org.springframework.core.io.Resource resource = new org.springframework.core.io.ClassPathResource(
+                    "messages/" + lang + ".json");
+            if (resource.exists()) {
+                ObjectMapper mapper = new ObjectMapper();
+                Map<String, String> staticTranslations = mapper.readValue(resource.getInputStream(),
+                        new TypeReference<Map<String, String>>() {
+                        });
+                if (staticTranslations != null) {
+                    finalTranslations.putAll(staticTranslations);
+                }
+            }
         } catch (Exception e) {
-            // Fallback empty translations on error
-            return ResponseEntity.ok(Collections.emptyMap());
+            System.err.println("Warning: Could not load static translations for " + lang);
         }
+
+        try {
+            // Load dynamic strings (these override static)
+            Map<String, String> dynamicTranslations = translationServiceClient.getTranslations(lang);
+            if (dynamicTranslations != null) {
+                finalTranslations.putAll(dynamicTranslations);
+            }
+        } catch (Exception e) {
+            System.err.println("Warning: Could not load dynamic translations for " + lang);
+        }
+
+        return ResponseEntity.ok(finalTranslations);
     }
 
     @PostMapping("/translations")

@@ -1,0 +1,22 @@
+{
+  "groups": [
+    {
+      "name": "rsa",
+      "type": "com.simon.armas_springboot_api.security.RsaKeyProperties",
+      "sourceType": "com.simon.armas_springboot_api.security.RsaKeyProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "rsa.private-key",
+      "type": "java.security.interfaces.RSAPrivateKey",
+      "sourceType": "com.simon.armas_springboot_api.security.RsaKeyProperties"
+    },
+    {
+      "name": "rsa.public-key",
+      "type": "java.security.interfaces.RSAPublicKey",
+      "sourceType": "com.simon.armas_springboot_api.security.RsaKeyProperties"
+    }
+  ],
+  "hints": []
+}

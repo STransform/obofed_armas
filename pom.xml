@@ -134,6 +134,12 @@
                 <configuration>
                     <source>17</source>
                     <target>17</target>
+                    <includes>
+                        <include>**/*.java</include>
+                    </includes>
+                    <fileExtensions>
+                        <fileExtension>java</fileExtension>
+                    </fileExtensions>
                 </configuration>
             </plugin>
         </plugins>

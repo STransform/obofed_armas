@@ -2,20 +2,9 @@
 
 import React, { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import {
-    Languages,
-    Save,
-    Search,
-    AlertCircle,
-    CheckCircle2,
-    ChevronRight,
-    Home,
-    ArrowLeft,
-    FileText,
-    Globe,
-    FileJson,
-    Database
-} from "lucide-react";
+import { Search, Plus, Edit, Trash2, Eye, Languages, Home, ChevronRight, FileText, Database, FileJson, AlertCircle, CheckCircle2, ArrowLeft, Save, Globe } from 'lucide-react';
+import * as Dialog from '@radix-ui/react-dialog';
+import { useTranslation } from '@/hooks/useTranslation';
 import axiosInstance from "../../../lib/axios";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
@@ -275,6 +264,11 @@ function TranslationEditorView({
     const [search, setSearch] = useState("");
     const [status, setStatus] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+    // Add New Key Modal State
+    const [isAddOpen, setIsAddOpen] = useState(false);
+    const [newKey, setNewKey] = useState("");
+    const [newValue, setNewValue] = useState("");
+
     // Load translations
     useEffect(() => {
         setLoading(true);
@@ -375,6 +369,34 @@ function TranslationEditorView({
         } finally {
             setSaving(false);
         }
+    };
+
+    const handleAddNewKey = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newKey.trim() || !newValue.trim()) return;
+
+        const key = newKey.trim();
+        // Check if key already exists in rows to avoid duplicates
+        const existingRow = rows.find(r => r.key === key);
+        if (existingRow) {
+            alert(`Key "${key}" already exists. Please edit it instead.`);
+            return;
+        }
+
+        const newRow: TranslationRow = {
+            key,
+            en: "", // Added dynamically, English is likely empty
+            target: newValue.trim(),
+            source: "dynamic",
+            isDirty: true
+        };
+
+        setRows([newRow, ...rows]);
+        setIsAddOpen(false);
+        setNewKey("");
+        setNewValue("");
+        setStatus({ type: "success", text: `Added key: ${key}. Remember to save changes.` });
+        setTimeout(() => setStatus(null), 4000);
     };
 
     const filteredRows = rows.filter((r) => {
@@ -488,7 +510,6 @@ function TranslationEditorView({
                 <div className="flex flex-col xl:flex-row gap-3 items-start xl:items-center justify-between">
                     <div className="flex flex-col lg:flex-row gap-3 w-full xl:w-auto">
                         <div className="relative w-full lg:w-80">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                             <input
                                 type="text"
                                 placeholder="Search keys or text..."
@@ -498,6 +519,16 @@ function TranslationEditorView({
                             />
                         </div>
 
+                        <div className="flex gap-2 shrink-0">
+                            <button
+                                onClick={() => setIsAddOpen(true)}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-medium"
+                            >
+                                <Plus size={16} />
+                                Add Key
+                            </button>
+                        </div>
+
                         <div className="flex gap-3">
                             <div className="flex items-center bg-slate-100 p-1 rounded-lg text-sm">
                                 {(["all", "untranslated", "translated"] as FilterType[]).map((f) => {
@@ -505,8 +536,8 @@ function TranslationEditorView({
                                         f === "all"
                                             ? `All (${rows.length})`
                                             : f === "untranslated"
-                                                ? `Missing (${rows.length - translatedCount})`
-                                                : `Done (${translatedCount})`;
+                                                ? `Untranslated (${rows.length - translatedCount})`
+                                                : `Translated (${translatedCount})`;
                                     return (
                                         <button
                                             key={f}
@@ -628,6 +659,68 @@ function TranslationEditorView({
                     )}
                 </div>
             </div>
+
+            {/* Radix Dialog: Add New Key */}
+            <Dialog.Root open={isAddOpen} onOpenChange={setIsAddOpen}>
+                <Dialog.Portal>
+                    <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40 transition-opacity" />
+                    <Dialog.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-md translate-x-[-50%] translate-y-[-50%] border bg-white p-6 shadow-xl sm:rounded-xl">
+                        <Dialog.Title className="text-lg font-bold text-slate-900 mb-1">
+                            Add New Translation Key
+                        </Dialog.Title>
+                        <Dialog.Description className="text-sm text-slate-500 mb-5">
+                            Manually register a missing dynamic translation key.
+                        </Dialog.Description>
+
+                        <form onSubmit={handleAddNewKey} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Translation Key <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    autoFocus
+                                    required
+                                    value={newKey}
+                                    onChange={e => setNewKey(e.target.value)}
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                                    placeholder="e.g. organization.BSC.orgname"
+                                />
+                                <p className="text-xs text-slate-500 mt-1">Found in the application when translations are missing.</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    {langMeta.name} Translation <span className="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                    required
+                                    value={newValue}
+                                    onChange={e => setNewValue(e.target.value)}
+                                    rows={3}
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none"
+                                    placeholder={`Enter the translation in ${langMeta.name}...`}
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsAddOpen(false)}
+                                    className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 shadow-sm"
+                                >
+                                    Add Translation
+                                </button>
+                            </div>
+                        </form>
+                    </Dialog.Content>
+                </Dialog.Portal>
+            </Dialog.Root>
+
         </div>
     );
 }

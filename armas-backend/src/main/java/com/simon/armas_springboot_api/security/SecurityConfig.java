@@ -66,6 +66,7 @@ public class SecurityConfig {
                         .requestMatchers("/register", "/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users").permitAll()
                         .requestMatchers(HttpMethod.GET, "/users").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/transactions/public-stats").permitAll()
                         .requestMatchers("/roles/**").permitAll()
                         .requestMatchers("/organizations/**").hasAnyRole("ADMIN", "SENIOR_AUDITOR", "APPROVER")
                         .requestMatchers("/directorates/**").hasRole("ADMIN")

@@ -50,11 +50,25 @@ const PILLAR_COLORS = [
 export default function HomePage() {
     const [lang, setLang] = useState<Lang>("en");
     const [mounted, setMounted] = useState(false);
+    const [dynamicStats, setDynamicStats] = useState<{ [key: string]: string | number }>({
+        organizations: "...",
+        users: "..."
+    });
 
     useEffect(() => {
         setMounted(true);
         const s = localStorage.getItem("armas_lang") as Lang | null;
         if (s && (s === "en" || s === "am" || s === "om")) setLang(s);
+
+        // Fetch dynamic stats for the homepage
+        fetch(process.env.NEXT_PUBLIC_API_URL + "/transactions/public-stats")
+            .then(res => res.json())
+            .then(data => {
+                if (data.organizations !== undefined && data.users !== undefined) {
+                    setDynamicStats(data);
+                }
+            })
+            .catch(console.error);
     }, []);
 
     const pick = (code: Lang) => {
@@ -190,10 +204,10 @@ export default function HomePage() {
 
                     {/* Stats strip */}
                     <div className="relative border-t border-white/10 bg-[#152035]/60">
-                        <div className="mx-auto max-w-7xl px-5 sm:px-8 py-5 grid grid-cols-2 sm:grid-cols-4 gap-0 divide-x divide-white/10">
-                            {t.stats.map((s, i) => (
-                                <div key={i} className="flex flex-col items-center py-2 px-4">
-                                    <span className="text-xl font-black text-white">{s.value}</span>
+                        <div className="mx-auto max-w-7xl px-5 sm:px-8 py-5 flex items-center justify-center divide-x divide-white/10">
+                            {t.stats.map((s: any, i: number) => (
+                                <div key={i} className="flex flex-col items-center py-2 px-12">
+                                    <span className="text-xl font-black text-white">{dynamicStats[s.key] !== undefined ? dynamicStats[s.key] : "..."}</span>
                                     <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mt-0.5">{s.label}</span>
                                 </div>
                             ))}

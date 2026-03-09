@@ -29,32 +29,39 @@ public class TranslationEntityListener {
                         String strValue = (String) value;
                         String prefix = entity.getClass().getSimpleName().toLowerCase() + ".";
 
-                        // If it doesn't already look like a translation key, treat it as new raw text
-                        if (!strValue.startsWith(prefix) && !strValue.contains(".")) {
+                        // If it doesn't already look like THIS entity's translation key, treat it as
+                        // new raw text.
+                        // Only skip if it already starts with our entity prefix (e.g. "organization.")
+                        // The old `!strValue.contains(".")` was too broad and would skip emails /
+                        // decimals.
+                        if (!strValue.startsWith(prefix)) {
                             String originalText = strValue;
                             String entityId = extractId(entity);
                             String messageKey = prefix + entityId + "." + field.getName().toLowerCase();
 
-                            // Overwrite entity field with generated key
-                            field.set(entity, messageKey);
-
-                            // Send English default to translation-service async
-                            log.info("Auto-generating translation key '{}' for content: {}", messageKey, originalText);
                             TranslationClient translationClient = SpringContext.getBean(TranslationClient.class);
+                            boolean registered = false;
 
                             if (translationClient != null) {
-                                CompletableFuture.runAsync(() -> {
-                                    try {
-                                        translationClient.registerTranslation(
-                                                new TranslationClient.TranslationRegistrationRequest(messageKey, "en",
-                                                        originalText));
-                                    } catch (Exception e) {
-                                        log.error("Failed to register translation for key " + messageKey, e);
-                                    }
-                                });
+                                try {
+                                    log.info("Registering translation key '{}' for content: {}", messageKey,
+                                            originalText);
+                                    translationClient.registerTranslation(
+                                            new TranslationClient.TranslationRegistrationRequest(messageKey, "en",
+                                                    originalText));
+                                    registered = true;
+                                } catch (Exception e) {
+                                    log.error("Failed to register translation for key " + messageKey
+                                            + ". Leaving original text to prevent data loss.", e);
+                                }
                             } else {
-                                log.warn(
-                                        "TranslationClient bean not available. Key registered locally but not pushed to DB.");
+                                log.warn("TranslationClient bean not available. Keeping original text.");
+                            }
+
+                            if (registered) {
+                                // Overwrite entity field with generated key only if we managed to save it to
+                                // translation-service
+                                field.set(entity, messageKey);
                             }
                         }
                     }

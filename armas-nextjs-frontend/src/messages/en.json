@@ -4,11 +4,11 @@
     "sysLabel": "Ministry of Finance — ARMAS Portal",
     "navLogin": "Staff Login",
     "heroEyebrow": "Integrated Government Platform",
-    "heroHeadline": "One Portal for All\nInstitutional Operations",
+    "heroHeadline": "Audit & Inspection\nReport Management System",
     "heroBody": "ARMAS streamlines reporting, audit oversight, document management, and access control into a single authorised ecosystem — enabling faster decisions and full accountability across all directorates.",
     "heroCta": "Access Secure Portal",
     "heroCtaSub": "Authorised personnel only",
-    "trustTitle": "Why institutions rely on ARMAS",
+    "trustTitle": "Why institutions trust ARMAS",
     "pillars": [
       {
         "icon": "report",
@@ -22,8 +22,8 @@
       },
       {
         "icon": "docs",
-        "title": "Task Management System",
-        "body": "Secure archiving, versioning, and dispatch of critical institutional documents and correspondence."
+        "title": "Microservices Architecture",
+        "body": "The system is built on a microservices architecture, ensuring scalability, maintainability, and ease of updates."
       },
       {
         "icon": "access",
@@ -37,25 +37,28 @@
       },
       {
         "icon": "security",
-        "title": "Enterprise Security",
-        "body": "AES-256 encryption, multi-factor authentication, and ISO 27001-aligned controls protect every record."
+        "title": "Security",
+        "body": "Role-based access control ensures that users only have access to the features and data relevant to their role."
       }
     ],
     "statsLabel": "Platform at a glance",
     "stats": [
-      { "value": "99.9%", "label": "Uptime SLA" },
-      { "value": "AES-256", "label": "Encryption" },
-      { "value": "ISO 27001", "label": "Compliance" },
-      { "value": "Tier IV", "label": "Data Centre" }
+      {
+        "key": "organizations",
+        "label": "Organizations"
+      },
+      {
+        "key": "users",
+        "label": "Active Users"
+      }
     ],
     "capLabel": "Platform Capabilities",
     "portalTitle": "ARMAS Services",
     "portalOnline": "● Online",
     "portalServices": [
-      "Reporting Engine",
-      "Audit & Compliance",
-      "Document Management",
-      "Access Control"
+      "Reporting Management System",
+      "Feedback Management System",
+      "Finding and Approval workflow System"
     ],
     "portalNote": "Login required to access all modules",
     "ctaBannerHeadline": "Ready to get started?",

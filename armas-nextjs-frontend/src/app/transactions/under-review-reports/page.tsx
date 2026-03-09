@@ -4,18 +4,24 @@ import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from '@/hooks/useTranslation';
 import axiosInstance from '@/lib/axios';
 import { Search, Download, CheckCircle, XCircle } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 
 export default function UnderReviewReportsPage() {
     const { isAuthenticated, userRole } = useAuth();
+    const { resolve } = useTranslation();
     const isApprover = userRole === 'APPROVER';
 
     const [reports, setReports] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Search and Pagination
     const [filterText, setFilterText] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
 
     const [selectedReport, setSelectedReport] = useState<any>(null);
     const [isApproveOpen, setIsApproveOpen] = useState(false);
@@ -102,10 +108,15 @@ export default function UnderReviewReportsPage() {
     };
 
     const filtered = reports.filter(r =>
-        (r.organization?.orgname || '').toLowerCase().includes(filterText.toLowerCase()) ||
-        (r.transactiondocument?.reportype || '').toLowerCase().includes(filterText.toLowerCase()) ||
+        (resolve(r.organization?.orgname) || '').toLowerCase().includes(filterText.toLowerCase()) ||
+        (resolve(r.transactiondocument?.reportype) || '').toLowerCase().includes(filterText.toLowerCase()) ||
         (r.remarks || '').toLowerCase().includes(filterText.toLowerCase())
     );
+
+    const totalPages = Math.ceil(filtered.length / itemsPerPage);
+    const currentReports = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    useEffect(() => { setCurrentPage(1); }, [filterText]);
 
     if (!isAuthenticated) return null;
 
@@ -123,60 +134,108 @@ export default function UnderReviewReportsPage() {
                     {error && <div className="mb-4 bg-red-50 text-red-700 p-3 rounded">{error}</div>}
 
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                        <div className="p-4 border-b flex items-center justify-between bg-gray-50/50">
+                        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
                             <div className="relative w-80">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
                                     type="text"
                                     placeholder="Search reports..."
-                                    className="w-full pl-9 pr-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-500 sm:text-sm"
+                                    className="w-full pl-9 pr-4 py-2 bg-gray-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 transition-shadow"
                                     value={filterText}
                                     onChange={e => setFilterText(e.target.value)}
                                 />
                             </div>
+                            <span className="text-sm font-medium text-gray-500 bg-gray-50 px-3 py-1 rounded-full">
+                                Total: {filtered.length} reports
+                            </span>
                         </div>
 
                         <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Organization</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Report Type</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Audit Findings</th>
-                                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            <table className="min-w-full divide-y divide-gray-100">
+                                <thead>
+                                    <tr className="bg-gray-50/50">
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Organization</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Report Type</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Audit Findings</th>
+                                        <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
+                                <tbody className="bg-white divide-y divide-gray-50">
                                     {loading ? (
-                                        <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">Loading reports...</td></tr>
-                                    ) : filtered.map(r => (
-                                        <tr key={r.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{r.createdDate ? new Date(r.createdDate).toLocaleDateString() : 'N/A'}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{r.organization?.orgname || 'N/A'}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{r.transactiondocument?.reportype || 'N/A'}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">{r.remarks || 'N/A'}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                                <div className="flex justify-end gap-3">
-                                                    {r.docname && (
-                                                        <button onClick={() => handleDownload(r.id, r.docname, 'original')} className="text-gray-600 hover:text-indigo-900" title="Original"><Download className="w-4 h-4" /></button>
-                                                    )}
-                                                    {r.supportingDocname && (
-                                                        <button onClick={() => handleDownload(r.id, r.supportingDocname, 'supporting')} className="text-indigo-600 hover:text-indigo-900" title="Findings"><Download className="w-4 h-4" /></button>
-                                                    )}
-                                                    {isApprover && (
-                                                        <>
-                                                            <button onClick={() => { setSelectedReport(r); setIsApproveOpen(true); }} className="text-emerald-600 hover:text-emerald-900" title="Approve"><CheckCircle className="w-4 h-4" /></button>
-                                                            <button onClick={() => { setSelectedReport(r); setIsRejectOpen(true); }} className="text-red-600 hover:text-red-900" title="Reject"><XCircle className="w-4 h-4" /></button>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                        <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-400">Loading reports...</td></tr>
+                                    ) : currentReports.length === 0 ? (
+                                        <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-400">No reports found.</td></tr>
+                                    ) : (
+                                        currentReports.map((r: any) => (
+                                            <tr key={r.id} className="hover:bg-indigo-50/30 transition-colors group">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {r.createdDate ? new Date(r.createdDate).toLocaleDateString() : 'N/A'}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    {resolve(r.organization?.orgname) || 'N/A'}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                    {resolve(r.transactiondocument?.reportype) || 'N/A'}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
+                                                    {r.remarks || 'N/A'}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        {r.docname && (
+                                                            <button onClick={() => handleDownload(r.id, r.docname, 'original')} className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="Download Original">
+                                                                <Download className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                        {r.supportingDocname && (
+                                                            <button onClick={() => handleDownload(r.id, r.supportingDocname, 'supporting')} className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="Download Findings">
+                                                                <Download className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                        {isApprover && (
+                                                            <>
+                                                                <button onClick={() => { setSelectedReport(r); setIsApproveOpen(true); }} className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors" title="Approve">
+                                                                    <CheckCircle className="w-4 h-4" />
+                                                                </button>
+                                                                <button onClick={() => { setSelectedReport(r); setIsRejectOpen(true); }} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Reject">
+                                                                    <XCircle className="w-4 h-4" />
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* Pagination Footer */}
+                        {!loading && filtered.length > 0 && (
+                            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+                                <div className="text-sm text-gray-500">
+                                    Showing <span className="font-medium text-gray-900">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-medium text-gray-900">{Math.min(currentPage * itemsPerPage, filtered.length)}</span> of <span className="font-medium text-gray-900">{filtered.length}</span> results
+                                </div>
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                        disabled={currentPage === 1}
+                                        className="px-3 py-1 border border-gray-200 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Previous
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                        disabled={currentPage === totalPages || totalPages === 0}
+                                        className="px-3 py-1 border border-gray-200 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </main>
             </div>

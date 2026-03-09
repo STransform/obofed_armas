@@ -4,7 +4,7 @@
         "sysLabel": "Ministeera Maallaqaa — Marsariitii ARMAS",
         "navLogin": "Hojjettootaaf Seeni",
         "heroEyebrow": "Marsariitii Mootummaa Tokkummaa",
-        "heroHeadline": "Hojii Dhaabbataa Hunda\nMarsariitii Tokko Keessatti",
+        "heroHeadline": "Sirna Odiitii fi Qorannoo\nBulchiinsa Gabaasaa",
         "heroBody": "ARMAS gabaasaa, odiitii, sanadoota, fi to'annoo hayyamaa giddugala tokko keessatti walitti fidee qindeessa — itti gaafatamummaa mirkaneessa.",
         "heroCta": "Marsariitii Nageenyi Qabu Seeni",
         "heroCtaSub": "Hojjettoota hayyamaman qofaaf",
@@ -44,20 +44,12 @@
         "statsLabel": "Marsariitiin akka gabaabsetti",
         "stats": [
             {
-                "value": "99.9%",
-                "label": "Yeroo Hojii"
+                "key": "organizations",
+                "label": "Dhaabbilee"
             },
             {
-                "value": "AES-256",
-                "label": "Icciitii"
-            },
-            {
-                "value": "ISO 27001",
-                "label": "Hordoffii"
-            },
-            {
-                "value": "Tier IV",
-                "label": "Giddugala Ragaa"
+                "key": "users",
+                "label": "Fayyadamtootaa"
             }
         ],
         "capLabel": "Dandeettiwwan Marsariitii",

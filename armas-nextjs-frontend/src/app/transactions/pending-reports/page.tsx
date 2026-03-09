@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from '@/hooks/useTranslation';
 import axiosInstance from '@/lib/axios';
 import { UserCog } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 
 export default function PendingReportsPage() {
     const { isAuthenticated, userRole } = useAuth();
+    const { resolve } = useTranslation();
     const isArchiver = userRole === 'ARCHIVER';
 
     const [tasks, setTasks] = useState<any[]>([]);
@@ -22,6 +24,11 @@ export default function PendingReportsPage() {
     const [auditors, setAuditors] = useState<any[]>([]);
     const [selectedAuditor, setSelectedAuditor] = useState('');
     const [reassigning, setReassigning] = useState(false);
+
+    // Search and Pagination
+    const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
 
     useEffect(() => {
         if (!isAuthenticated || !isArchiver) return;
@@ -72,6 +79,22 @@ export default function PendingReportsPage() {
         }
     };
 
+    // Filter and Pagination Logic
+    const filteredTasks = tasks.filter(t => {
+        const org = resolve(t.organization?.orgname || t.orgname || '').toLowerCase();
+        const rpt = resolve(t.transactiondocument?.reportype || t.reportype || '').toLowerCase();
+        const aud = (t.user2?.username || t.assignedAuditorUsername || '').toLowerCase();
+        const stat = (t.reportstatus || '').toLowerCase();
+        const search = searchTerm.toLowerCase();
+        return org.includes(search) || rpt.includes(search) || aud.includes(search) || stat.includes(search);
+    });
+
+    const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);
+    const currentTasks = filteredTasks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    // Reset pagination when search changes
+    useEffect(() => { setCurrentPage(1); }, [searchTerm]);
+
     if (!isAuthenticated) return <div className="p-8">Please log in.</div>;
     if (!isArchiver) return <div className="p-8 text-red-600">Unauthorized access. ARCHIVER role required.</div>;
 
@@ -88,50 +111,113 @@ export default function PendingReportsPage() {
 
                     {error && <div className="mb-4 bg-red-50 text-red-700 p-3 rounded">{error}</div>}
 
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Organization</th>
-                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Budget Year</th>
-                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Report Type</th>
-                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Assigned Auditor</th>
-                                        <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {loading ? (
-                                        <tr><td colSpan={7} className="px-6 py-12 text-center text-gray-500">Loading pending tasks...</td></tr>
-                                    ) : tasks.length === 0 ? (
-                                        <tr><td colSpan={7} className="px-6 py-12 text-center text-gray-500">No pending reports currently assigned.</td></tr>
-                                    ) : (
-                                        tasks.map(t => (
-                                            <tr key={t.id} className="hover:bg-gray-50 transition-colors">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{t.createdDate ? new Date(t.createdDate).toLocaleDateString() : 'N/A'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                    <span className={`px-2 py-1 rounded text-xs font-medium ${t.reportstatus === 'Rejected' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
-                                                        {t.reportstatus || 'N/A'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{t.organization?.orgname || t.orgname || 'N/A'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{t.budgetYear?.fiscalYear || t.fiscalYear || 'N/A'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{t.transactiondocument?.reportype || t.reportype || 'N/A'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{t.user2?.username || t.assignedAuditorUsername || 'N/A'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <button onClick={() => handleOpenReassign(t)} className="text-amber-600 hover:text-amber-800 flex items-center justify-end w-full bg-amber-50 px-3 py-1.5 rounded-md border border-amber-200" title="Reassign Task">
-                                                        <UserCog className="w-4 h-4 mr-1.5" /> Reassign
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
+                    <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
+                        <div className="relative w-72">
+                            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <input
+                                type="text"
+                                placeholder="Search org, type, auditor..."
+                                className="w-full pl-9 pr-4 py-2 bg-gray-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 transition-shadow"
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                            />
                         </div>
+                        <span className="text-sm font-medium text-gray-500 bg-gray-50 px-3 py-1 rounded-full">
+                            Total: {filteredTasks.length} reports
+                        </span>
                     </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-100">
+                            <thead>
+                                <tr className="bg-gray-50/50">
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Organization</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Budget Year</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Report Type</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Assigned Auditor</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-50">
+                                {loading ? (
+                                    <tr><td colSpan={7} className="px-6 py-12 text-center text-gray-400">Loading pending tasks...</td></tr>
+                                ) : currentTasks.length === 0 ? (
+                                    <tr><td colSpan={7} className="px-6 py-12 text-center text-gray-400">No pending reports currently assigned.</td></tr>
+                                ) : (
+                                    currentTasks.map(t => (
+                                        <tr key={t.id} className="hover:bg-indigo-50/30 transition-colors group">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {t.createdDate ? new Date(t.createdDate).toLocaleDateString() : 'N/A'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                {resolve(t.organization?.orgname || t.orgname || '') || 'N/A'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                                    {t.budgetYear?.fiscalYear || t.fiscalYear || 'N/A'}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                {resolve(t.transactiondocument?.reportype || t.reportype || '') || 'N/A'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                <div className="flex items-center">
+                                                    <div className="h-6 w-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold mr-2">
+                                                        {(t.user2?.username || t.assignedAuditorUsername || '?').charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <span className="font-medium text-gray-700">{t.user2?.username || t.assignedAuditorUsername || 'N/A'}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${t.reportstatus === 'Rejected' ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-blue-50 text-blue-700 border border-blue-100'}`}>
+                                                    {t.reportstatus === 'Rejected' ? (
+                                                        <span className="w-1.5 h-1.5 mr-1.5 rounded-full bg-red-500"></span>
+                                                    ) : (
+                                                        <span className="w-1.5 h-1.5 mr-1.5 rounded-full bg-blue-500"></span>
+                                                    )}
+                                                    {t.reportstatus || 'N/A'}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                                <button onClick={() => handleOpenReassign(t)} className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center justify-center px-3 py-1.5 border border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-md font-medium text-xs">
+                                                    <UserCog className="w-3.5 h-3.5 mr-1" /> Reassign
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Pagination Footer */}
+                    {!loading && filteredTasks.length > 0 && (
+                        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+                            <div className="text-sm text-gray-500">
+                                Showing <span className="font-medium text-gray-900">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-medium text-gray-900">{Math.min(currentPage * itemsPerPage, filteredTasks.length)}</span> of <span className="font-medium text-gray-900">{filteredTasks.length}</span> results
+                            </div>
+                            <div className="flex space-x-2">
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                    className="px-3 py-1 border border-gray-200 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    Previous
+                                </button>
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    disabled={currentPage === totalPages || totalPages === 0}
+                                    className="px-3 py-1 border border-gray-200 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </main>
             </div>
 

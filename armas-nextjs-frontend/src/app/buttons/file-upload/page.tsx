@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from '@/hooks/useTranslation';
 import axiosInstance from '@/lib/axios';
 
 const uploadFile = async (file: File, reportcategory: string, budgetYearId: number, transactiondocumentid: string) => {
@@ -19,6 +20,7 @@ const uploadFile = async (file: File, reportcategory: string, budgetYearId: numb
 
 export default function FileUploadPage() {
     const { isAuthenticated } = useAuth();
+    const { resolve } = useTranslation();
 
     const [documents, setDocuments] = useState<any[]>([]);
     const [budgetYears, setBudgetYears] = useState<any[]>([]);
@@ -173,7 +175,7 @@ export default function FileUploadPage() {
                                         >
                                             <option value="">Select Report Type</option>
                                             {documents.map(doc => (
-                                                <option key={doc.id} value={doc.id}>{doc.reportype}</option>
+                                                <option key={doc.id} value={doc.id}>{resolve(doc.reportype)}</option>
                                             ))}
                                         </select>
                                     </div>

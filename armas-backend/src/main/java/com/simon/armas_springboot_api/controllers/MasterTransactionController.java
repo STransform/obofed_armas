@@ -74,6 +74,19 @@ public class MasterTransactionController {
     @Autowired
     private TranslationServiceClient translationServiceClient;
 
+    @GetMapping("/public-stats")
+    public ResponseEntity<Map<String, Object>> getPublicStats() {
+        try {
+            Map<String, Object> stats = new HashMap<>();
+            stats.put("organizations", masterTransactionService.getTotalOrganizations());
+            stats.put("users", userRepository.count());
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to fetch public stats"));
+        }
+    }
+
     @GetMapping("/translations")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, String>> getTranslations(@RequestParam(defaultValue = "en") String lang) {

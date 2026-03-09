@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
-@FeignClient(name = "translation-service", url = "${translation-service.url:http://localhost:8086}")
+@FeignClient(name = "translation-service", url = "${translation-service.url:http://localhost:8086}", configuration = com.oss2.translationclient.config.TranslationFeignConfig.class)
 public interface TranslationClient {
 
     @PostMapping("/api/translations/register")

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from '@/hooks/useTranslation';
 import axiosInstance from '@/lib/axios';
 import { Search, Eye, Download, UploadCloud } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
@@ -16,20 +17,25 @@ const downloadFile = async (id: string | number, type: string) => {
 
 export default function ApprovedReportsPage() {
     const { isAuthenticated, userRole } = useAuth();
+    const { resolve } = useTranslation();
     const isArchiver = userRole === 'ARCHIVER';
 
     const [reports, setReports] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filterText, setFilterText] = useState('');
     const [error, setError] = useState<string | null>(null);
 
-    // Modals
+    // Modal States
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [selectedReport, setSelectedReport] = useState<any>(null);
-
     const [isUploadOpen, setIsUploadOpen] = useState(false);
-    const [letterFile, setLetterFile] = useState<File | null>(null);
+    const [uploadingItem, setUploadingItem] = useState<any>(null);
+    const [uploadFile, setUploadFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
+
+    // Search and Pagination
+    const [filterText, setFilterText] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
 
     useEffect(() => {
         if (!isAuthenticated) return;
@@ -68,20 +74,20 @@ export default function ApprovedReportsPage() {
     };
 
     const handleOpenUpload = (report: any) => {
-        setSelectedReport(report);
-        setLetterFile(null);
+        setUploadingItem(report);
+        setUploadFile(null);
         setIsUploadOpen(true);
     };
 
     const submitLetterUpload = async () => {
-        if (!letterFile) return alert('Please select a file to upload');
+        if (!uploadFile) return alert('Please select a file to upload');
         setUploading(true);
 
         const formData = new FormData();
-        formData.append('file', letterFile);
+        formData.append('file', uploadFile);
 
         try {
-            await axiosInstance.post(`/transactions/upload-letter/${selectedReport.id}`, formData, {
+            await axiosInstance.post(`/transactions/upload-letter/${uploadingItem.id}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             setIsUploadOpen(false);
@@ -94,12 +100,18 @@ export default function ApprovedReportsPage() {
     };
 
     const filtered = reports.filter(r =>
-        (r.orgname || '').toLowerCase().includes(filterText.toLowerCase()) ||
-        (r.reportype || '').toLowerCase().includes(filterText.toLowerCase()) ||
+        (resolve(r.orgname) || '').toLowerCase().includes(filterText.toLowerCase()) ||
+        (resolve(r.reportype) || '').toLowerCase().includes(filterText.toLowerCase()) ||
         (r.submittedByAuditorUsername || '').toLowerCase().includes(filterText.toLowerCase()) ||
         (r.reportstatus || '').toLowerCase().includes(filterText.toLowerCase()) ||
         (r.fiscalYear || '').toString().toLowerCase().includes(filterText.toLowerCase())
     );
+
+    const totalPages = Math.ceil(filtered.length / itemsPerPage);
+    const currentReports = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    // Reset pagination when search changes
+    useEffect(() => { setCurrentPage(1); }, [filterText]);
 
     if (!isAuthenticated) return <div className="p-8">Please log in.</div>;
 
@@ -117,52 +129,65 @@ export default function ApprovedReportsPage() {
                     {error && <div className="mb-4 bg-red-50 text-red-700 p-3 rounded">{error}</div>}
 
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                        <div className="p-4 border-b flex items-center justify-between bg-gray-50/50">
+                        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
                             <div className="relative w-80">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
                                     type="text"
                                     placeholder="Search by org, type, auditor..."
-                                    className="w-full pl-9 pr-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    className="w-full pl-9 pr-4 py-2 bg-gray-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 transition-shadow"
                                     value={filterText}
                                     onChange={e => setFilterText(e.target.value)}
                                 />
                             </div>
-                            <span className="text-sm text-gray-500 font-medium">Total: {filtered.length} reports</span>
+                            <span className="text-sm font-medium text-gray-500 bg-gray-50 px-3 py-1 rounded-full">
+                                Total: {filtered.length} reports
+                            </span>
                         </div>
 
                         <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organization</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Budget Year</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Report Type</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            <table className="min-w-full divide-y divide-gray-100">
+                                <thead>
+                                    <tr className="bg-gray-50/50">
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Organization</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Budget Year</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Report Type</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
+                                <tbody className="bg-white divide-y divide-gray-50">
                                     {loading ? (
-                                        <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-500">Loading approved reports...</td></tr>
-                                    ) : filtered.length === 0 ? (
-                                        <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-500">No approved reports found.</td></tr>
+                                        <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400">Loading approved reports...</td></tr>
+                                    ) : currentReports.length === 0 ? (
+                                        <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400">No approved reports found.</td></tr>
                                     ) : (
-                                        filtered.map(r => (
-                                            <tr key={r.id} className="hover:bg-gray-50 transition-colors">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{r.createdDate ? new Date(r.createdDate).toLocaleDateString() : 'N/A'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{r.orgname || 'N/A'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{r.fiscalYear || 'N/A'}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{r.reportype || 'N/A'}</td>
+                                        currentReports.map((r: any) => (
+                                            <tr key={r.id} className="hover:bg-indigo-50/30 transition-colors group">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {r.createdDate ? new Date(r.createdDate).toLocaleDateString() : 'N/A'}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    {resolve(r.orgname) || 'N/A'}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                                        {r.fiscalYear || 'N/A'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                    {resolve(r.reportype) || 'N/A'}
+                                                </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                    <span className={`px-2 py-1 flex items-center justify-center rounded text-xs font-medium bg-green-100 text-green-800`}>
+                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100">
+                                                        <span className="w-1.5 h-1.5 mr-1.5 rounded-full bg-green-500"></span>
                                                         {r.reportstatus || 'N/A'}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <div className="flex items-center justify-end space-x-3">
-                                                        <button onClick={() => { setSelectedReport(r); setIsDetailsOpen(true); }} className="text-gray-600 hover:text-indigo-900" title="View Details">
+                                                    <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button onClick={() => { setSelectedReport(r); setIsDetailsOpen(true); }} className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="View Details">
                                                             <Eye className="w-4 h-4" />
                                                         </button>
                                                         {r.docname && (
@@ -180,8 +205,8 @@ export default function ApprovedReportsPage() {
                                                                 <Download className="w-4 h-4" />
                                                             </button>
                                                         )}
-                                                        {isArchiver && r.reportstatus === 'Approved' && !r.letterDocname && (
-                                                            <button onClick={() => handleOpenUpload(r)} className="text-amber-600 hover:text-amber-900" title="Upload Final Letter">
+                                                        {isArchiver && r.reportstatus === 'Approved' && (
+                                                            <button onClick={() => { setUploadingItem(r); setIsUploadOpen(true); }} className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors" title="Upload Final Letter">
                                                                 <UploadCloud className="w-4 h-4" />
                                                             </button>
                                                         )}
@@ -193,6 +218,31 @@ export default function ApprovedReportsPage() {
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* Pagination Footer */}
+                        {!loading && filtered.length > 0 && (
+                            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+                                <div className="text-sm text-gray-500">
+                                    Showing <span className="font-medium text-gray-900">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-medium text-gray-900">{Math.min(currentPage * itemsPerPage, filtered.length)}</span> of <span className="font-medium text-gray-900">{filtered.length}</span> results
+                                </div>
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                        disabled={currentPage === 1}
+                                        className="px-3 py-1 border border-gray-200 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Previous
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                        disabled={currentPage === totalPages || totalPages === 0}
+                                        className="px-3 py-1 border border-gray-200 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </main>
             </div>
@@ -207,7 +257,7 @@ export default function ApprovedReportsPage() {
                             <label className="block text-sm font-medium text-gray-700 mb-2">Select Letter File (PDF/DOCX)</label>
                             <input
                                 type="file"
-                                onChange={e => setLetterFile(e.target.files?.[0] || null)}
+                                onChange={e => setUploadFile(e.target.files?.[0] || null)}
                                 className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm focus:ring-1 focus:ring-indigo-500 file:mr-4 file:py-1 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                             />
                         </div>
@@ -215,7 +265,7 @@ export default function ApprovedReportsPage() {
                             <button onClick={() => setIsUploadOpen(false)} className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-gray-50">Cancel</button>
                             <button
                                 onClick={submitLetterUpload}
-                                disabled={uploading || !letterFile}
+                                disabled={uploading || !uploadFile}
                                 className="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
                             >
                                 {uploading ? 'Uploading...' : 'Upload Letter'}
@@ -235,9 +285,9 @@ export default function ApprovedReportsPage() {
                         <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm mt-4">
                             <div><label className="text-gray-500 font-medium">Date</label><div className="p-2 bg-gray-50 border rounded">{selectedReport?.createdDate ? new Date(selectedReport.createdDate).toLocaleDateString() : 'N/A'}</div></div>
                             <div><label className="text-gray-500 font-medium">Status</label><div className="p-2 bg-gray-50 border rounded">{selectedReport?.reportstatus || 'N/A'}</div></div>
-                            <div><label className="text-gray-500 font-medium">Organization</label><div className="p-2 bg-gray-50 border rounded">{selectedReport?.orgname || 'N/A'}</div></div>
+                            <div><label className="text-gray-500 font-medium">Organization</label><div className="p-2 bg-gray-50 border rounded">{resolve(selectedReport?.orgname) || 'N/A'}</div></div>
                             <div><label className="text-gray-500 font-medium">Budget Year</label><div className="p-2 bg-gray-50 border rounded">{selectedReport?.fiscalYear || 'N/A'}</div></div>
-                            <div><label className="text-gray-500 font-medium">Report Type</label><div className="p-2 bg-gray-50 border rounded">{selectedReport?.reportype || 'N/A'}</div></div>
+                            <div><label className="text-gray-500 font-medium">Report Type</label><div className="p-2 bg-gray-50 border rounded">{resolve(selectedReport?.reportype) || 'N/A'}</div></div>
                             <div><label className="text-gray-500 font-medium">Auditor</label><div className="p-2 bg-gray-50 border rounded">{selectedReport?.submittedByAuditorUsername || 'N/A'}</div></div>
                             <div><label className="text-gray-500 font-medium">Approver</label><div className="p-2 bg-gray-50 border rounded">{selectedReport?.lastModifiedBy || 'N/A'}</div></div>
                             <div><label className="text-gray-500 font-medium">Archiver</label><div className="p-2 bg-gray-50 border rounded">{selectedReport?.assignedByUsername || 'N/A'}</div></div>

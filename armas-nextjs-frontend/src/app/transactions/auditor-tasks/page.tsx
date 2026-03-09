@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from '@/hooks/useTranslation';
 import axiosInstance from '@/lib/axios';
 import { Search, Eye, Download, ClipboardCheck, CheckCircle, XCircle } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 
 export default function AuditorTasksPage() {
     const { isAuthenticated, userRole } = useAuth();
+    const { resolve } = useTranslation();
     // In original code, it checks roles array. Here we assume userRole is the primary role.
     const isSeniorAuditor = userRole === 'SENIOR_AUDITOR';
     const isApprover = userRole === 'APPROVER';
@@ -17,7 +19,11 @@ export default function AuditorTasksPage() {
     const [tasks, setTasks] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Search and Pagination
     const [filterText, setFilterText] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
 
     // Modals
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -147,10 +153,15 @@ export default function AuditorTasksPage() {
     };
 
     const filtered = tasks.filter(t =>
-        (t.orgname || '').toLowerCase().includes(filterText.toLowerCase()) ||
-        (t.reportype || '').toLowerCase().includes(filterText.toLowerCase()) ||
+        (resolve(t.orgname) || '').toLowerCase().includes(filterText.toLowerCase()) ||
+        (resolve(t.reportype) || '').toLowerCase().includes(filterText.toLowerCase()) ||
         (t.reportstatus || '').toLowerCase().includes(filterText.toLowerCase())
     );
+
+    const totalPages = Math.ceil(filtered.length / itemsPerPage);
+    const currentTasks = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    useEffect(() => { setCurrentPage(1); }, [filterText]);
 
     if (!isAuthenticated) return null;
 
@@ -168,63 +179,114 @@ export default function AuditorTasksPage() {
                     {error && <div className="mb-4 bg-red-50 text-red-700 p-3 rounded">{error}</div>}
 
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                        <div className="p-4 border-b flex items-center justify-between bg-gray-50/50">
+                        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
                             <div className="relative w-80">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
                                     type="text"
                                     placeholder="Search tasks..."
-                                    className="w-full pl-9 pr-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-500 sm:text-sm"
+                                    className="w-full pl-9 pr-4 py-2 bg-gray-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 transition-shadow"
                                     value={filterText}
                                     onChange={e => setFilterText(e.target.value)}
                                 />
                             </div>
+                            <span className="text-sm font-medium text-gray-500 bg-gray-50 px-3 py-1 rounded-full">
+                                Total: {filtered.length} tasks
+                            </span>
                         </div>
 
                         <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Organization</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Report Type</th>
-                                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            <table className="min-w-full divide-y divide-gray-100">
+                                <thead>
+                                    <tr className="bg-gray-50/50">
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Organization</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Report Type</th>
+                                        <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
+                                <tbody className="bg-white divide-y divide-gray-50">
                                     {loading ? (
-                                        <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">Loading tasks...</td></tr>
-                                    ) : filtered.map(t => (
-                                        <tr key={t.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{t.createdDate ? new Date(t.createdDate).toLocaleDateString() : 'N/A'}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                <span className={`px-2 py-1 rounded text-xs font-medium ${t.reportstatus === 'Assigned' || t.reportstatus === 'Under Review' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>{t.reportstatus || 'N/A'}</span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{t.orgname || 'N/A'}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{t.reportype || 'N/A'}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                                <div className="flex justify-end gap-3">
-                                                    <button onClick={() => { setSelectedTask(t); setIsDetailsOpen(true); }} className="text-gray-600 hover:text-indigo-900"><Eye className="w-4 h-4" /></button>
-                                                    {t.docname && (
-                                                        <button onClick={() => handleDownload(t.id, t.docname, 'original')} className="text-indigo-600 hover:text-indigo-900"><Download className="w-4 h-4" /></button>
-                                                    )}
-                                                    {isSeniorAuditor && (t.reportstatus === 'Assigned' || t.reportstatus === 'Rejected') && (
-                                                        <button onClick={() => handleOpenFindings(t)} className="text-blue-600 hover:text-blue-900"><ClipboardCheck className="w-4 h-4" /></button>
-                                                    )}
-                                                    {isApprover && (t.reportstatus === 'Under Review' || t.reportstatus === 'Corrected') && (
-                                                        <>
-                                                            <button onClick={() => { setSelectedTask(t); setIsApproveOpen(true); }} className="text-green-600 hover:text-green-900"><CheckCircle className="w-4 h-4" /></button>
-                                                            <button onClick={() => handleOpenFindings(t, true)} className="text-red-600 hover:text-red-900"><XCircle className="w-4 h-4" /></button>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                        <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-400">Loading tasks...</td></tr>
+                                    ) : currentTasks.length === 0 ? (
+                                        <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-400">No tasks found.</td></tr>
+                                    ) : (
+                                        currentTasks.map((t: any) => (
+                                            <tr key={t.id} className="hover:bg-indigo-50/30 transition-colors group">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {t.createdDate ? new Date(t.createdDate).toLocaleDateString() : 'N/A'}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${t.reportstatus === 'Assigned' || t.reportstatus === 'Under Review' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-orange-50 text-orange-700 border border-orange-100'}`}>
+                                                        <span className={`w-1.5 h-1.5 mr-1.5 rounded-full ${t.reportstatus === 'Assigned' || t.reportstatus === 'Under Review' ? 'bg-green-500' : 'bg-orange-500'}`}></span>
+                                                        {t.reportstatus || 'N/A'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    {resolve(t.orgname) || 'N/A'}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                    {resolve(t.reportype) || 'N/A'}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button onClick={() => { setSelectedTask(t); setIsDetailsOpen(true); }} className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="View details">
+                                                            <Eye className="w-4 h-4" />
+                                                        </button>
+                                                        {t.docname && (
+                                                            <button onClick={() => handleDownload(t.id, t.docname, 'original')} className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="Download">
+                                                                <Download className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                        {isSeniorAuditor && (t.reportstatus === 'Assigned' || t.reportstatus === 'Rejected') && (
+                                                            <button onClick={() => handleOpenFindings(t)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" title="Submit Findings">
+                                                                <ClipboardCheck className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                        {isApprover && (t.reportstatus === 'Under Review' || t.reportstatus === 'Corrected') && (
+                                                            <>
+                                                                <button onClick={() => { setSelectedTask(t); setIsApproveOpen(true); }} className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors" title="Approve">
+                                                                    <CheckCircle className="w-4 h-4" />
+                                                                </button>
+                                                                <button onClick={() => handleOpenFindings(t, true)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Reject">
+                                                                    <XCircle className="w-4 h-4" />
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* Pagination Footer */}
+                        {!loading && filtered.length > 0 && (
+                            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+                                <div className="text-sm text-gray-500">
+                                    Showing <span className="font-medium text-gray-900">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-medium text-gray-900">{Math.min(currentPage * itemsPerPage, filtered.length)}</span> of <span className="font-medium text-gray-900">{filtered.length}</span> results
+                                </div>
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                        disabled={currentPage === 1}
+                                        className="px-3 py-1 border border-gray-200 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Previous
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                        disabled={currentPage === totalPages || totalPages === 0}
+                                        className="px-3 py-1 border border-gray-200 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </main>
             </div>
@@ -293,8 +355,8 @@ export default function AuditorTasksPage() {
                     <Dialog.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-2xl translate-x-[-50%] translate-y-[-50%] border bg-white p-6 shadow-lg rounded-lg">
                         <Dialog.Title className="text-lg font-semibold mb-6 border-b pb-2">Task Details</Dialog.Title>
                         <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm mt-4">
-                            <div><label className="text-gray-500 font-medium">Organization</label><div className="p-2 bg-gray-50 border rounded">{selectedTask?.orgname || 'N/A'}</div></div>
-                            <div><label className="text-gray-500 font-medium">Type</label><div className="p-2 bg-gray-50 border rounded">{selectedTask?.reportype || 'N/A'}</div></div>
+                            <div><label className="text-gray-500 font-medium">Organization</label><div className="p-2 bg-gray-50 border rounded">{resolve(selectedTask?.orgname) || 'N/A'}</div></div>
+                            <div><label className="text-gray-500 font-medium">Type</label><div className="p-2 bg-gray-50 border rounded">{resolve(selectedTask?.reportype) || 'N/A'}</div></div>
                             <div><label className="text-gray-500 font-medium">Status</label><div className="p-2 bg-gray-50 border rounded">{selectedTask?.reportstatus || 'N/A'}</div></div>
                             <div><label className="text-gray-500 font-medium">Submitted By</label><div className="p-2 bg-gray-50 border rounded">{selectedTask?.submittedByAuditorUsername || selectedTask?.user || 'N/A'}</div></div>
                         </div>

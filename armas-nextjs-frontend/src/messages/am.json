@@ -4,7 +4,7 @@
         "sysLabel": "የፋይናንስ ሚኒስቴር — ARMAS ፖርታል",
         "navLogin": "ለሠራተኞች ግባ",
         "heroEyebrow": "የተዋሃደ የመንግሥት መድረክ",
-        "heroHeadline": "ሁሉም የተቋም ሥራዎች\nበአንድ ፖርታል",
+        "heroHeadline": "የኦዲት እና ምርመራ\nሪፖርት አስተዳደር ሥርዓት",
         "heroBody": "ARMAS ሪፖርቶችን፣ ኦዲትን፣ ሰነዶችን እና የፍቃድ ቁጥጥርን በአንድ ሥርዓት ውስጥ ያዋህዳል — ተጠያቂነትን ያረጋግጣል።",
         "heroCta": "ወደ ፖርታሉ ይግቡ",
         "heroCtaSub": "ለፈቃድ ያላቸው ሠራተኞች ብቻ",
@@ -44,20 +44,12 @@
         "statsLabel": "ፕሌትፎርሙ በአጭሩ",
         "stats": [
             {
-                "value": "99.9%",
-                "label": "የሥራ ሰዓት"
+                "key": "organizations",
+                "label": "ድርጅቶች"
             },
             {
-                "value": "AES-256",
-                "label": "ምስጠራ"
-            },
-            {
-                "value": "ISO 27001",
-                "label": "ተኳሃኝነት"
-            },
-            {
-                "value": "Tier IV",
-                "label": "ዳታ ማዕከል"
+                "key": "users",
+                "label": "ተጠቃሚዎች"
             }
         ],
         "capLabel": "የፕሌትፎርም አቅሞች",

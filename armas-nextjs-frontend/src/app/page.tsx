@@ -132,6 +132,7 @@ export default function HomePage() {
 
                         {/* Login */}
                         <Link href="/login"
+                            prefetch={false}
                             className="flex items-center gap-2 px-4 py-2 bg-[#1a3fa8] hover:bg-[#1535c7] text-white rounded-lg text-sm font-semibold transition-colors shadow-sm">
                             {t.navLogin}
                         </Link>

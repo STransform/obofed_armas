@@ -118,6 +118,7 @@ export function Sidebar() {
                             <li key={item.href}>
                                 <Link
                                     href={item.href}
+                                    prefetch={false}
                                     className={`group flex items-center justify-between px-4 py-2.5 rounded-lg mx-2 text-sm font-medium transition-all duration-150 ${active
                                         ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40'
                                         : 'text-slate-400 hover:bg-slate-700/60 hover:text-slate-100'

@@ -42,9 +42,8 @@ export default function AuditorTasksPage() {
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
-        if (!isAuthenticated) return;
         fetchTasks();
-    }, [isAuthenticated, userRole]);
+    }, [userRole]);
 
     const fetchTasks = async () => {
         setLoading(true);

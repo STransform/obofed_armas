@@ -38,9 +38,8 @@ export default function ApprovedReportsPage() {
     const itemsPerPage = 5;
 
     useEffect(() => {
-        if (!isAuthenticated) return;
         fetchReports();
-    }, [isAuthenticated]);
+    }, []);
 
     const fetchReports = async () => {
         setLoading(true);

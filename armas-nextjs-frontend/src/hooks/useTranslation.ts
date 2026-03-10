@@ -1,16 +1,11 @@
 /**
- * useTranslation
+ * useTranslation - optimized version
  *
- * Fetches the active locale's dynamic translation dictionary from the
- * translation-service and exposes a `resolve(key)` helper.
- *
- * Usage:
- *   const { resolve } = useTranslation();
- *   ...
- *   <td>{resolve(org.orgname)}</td>
- *
- * For any value that does NOT look like a translation key (no dots, or
- * doesn't match "<entityName>.<id>.<field>") it is returned as-is.
+ * Changes from original:
+ * 1. Persists the translation dictionary in sessionStorage so it survives
+ *    page navigations without firing new API requests.
+ * 2. Module-level in-memory cache still used as a faster hot-path.
+ * 3. English dict is reused when lang === 'en' (no duplicate request).
  */
 
 import { useEffect, useState, useCallback } from 'react';
@@ -18,99 +13,95 @@ import axiosInstance from '@/lib/axios';
 
 type Dict = Record<string, string>;
 
-// Module-level cache so simultaneous components share one request
-let cachedLang = '';
-let cachedDict: Dict = {};
-let pendingPromise: Promise<Dict> | null = null;
+const SESSION_KEY = 'armas_trans_';
 
-let cachedEnDict: Dict = {};
-let pendingEnPromise: Promise<Dict> | null = null;
+// Module-level in-memory cache (reset on hot reload, but that's fine)
+const memCache: Record<string, Dict> = {};
+const pendingRequests: Record<string, Promise<Dict>> = {};
 
-async function loadEnDict(): Promise<Dict> {
-    if (Object.keys(cachedEnDict).length > 0) return cachedEnDict;
-    if (!pendingEnPromise) {
-        pendingEnPromise = axiosInstance
-            .get('/transactions/translations', { params: { lang: 'en' } })
-            .then(r => {
-                cachedEnDict = r.data || {};
-                pendingEnPromise = null;
-                return cachedEnDict;
-            })
-            .catch(() => {
-                pendingEnPromise = null;
-                return {} as Dict;
-            });
+function getCachedDict(lang: string): Dict | null {
+    if (memCache[lang] && Object.keys(memCache[lang]).length > 0) {
+        return memCache[lang];
     }
-    return pendingEnPromise;
+    try {
+        const stored = sessionStorage.getItem(SESSION_KEY + lang);
+        if (stored) {
+            const parsed = JSON.parse(stored) as Dict;
+            if (Object.keys(parsed).length > 0) {
+                memCache[lang] = parsed;
+                return parsed;
+            }
+        }
+    } catch { /* ignore */ }
+    return null;
 }
 
 async function loadDict(lang: string): Promise<Dict> {
-    if (lang === cachedLang && Object.keys(cachedDict).length > 0) {
-        return cachedDict;
-    }
-    if (!pendingPromise || lang !== cachedLang) {
-        cachedLang = lang;
-        cachedDict = {};
-        pendingPromise = axiosInstance
+    const cached = getCachedDict(lang);
+    if (cached) return cached;
+
+    if (!pendingRequests[lang]) {
+        pendingRequests[lang] = axiosInstance
             .get('/transactions/translations', { params: { lang } })
             .then(r => {
-                cachedDict = r.data || {};
-                pendingPromise = null;
-                return cachedDict;
+                const data: Dict = r.data || {};
+                memCache[lang] = data;
+                try { sessionStorage.setItem(SESSION_KEY + lang, JSON.stringify(data)); } catch { /* ignore */ }
+                delete pendingRequests[lang];
+                return data;
             })
             .catch(() => {
-                pendingPromise = null;
+                delete pendingRequests[lang];
                 return {} as Dict;
             });
     }
-    return pendingPromise!;
+    return pendingRequests[lang];
 }
 
 export function useTranslation() {
-    const [dict, setDict] = useState<Dict>(cachedDict);
-    const [enDict, setEnDict] = useState<Dict>(cachedEnDict);
+    const lang = (typeof window !== 'undefined'
+        ? localStorage.getItem('armas_lang')
+        : null) || 'en';
+
+    // Initialize synchronously from cache if available
+    const [dict, setDict] = useState<Dict>(() => getCachedDict(lang) ?? {});
+    const [enDict, setEnDict] = useState<Dict>(() => getCachedDict('en') ?? {});
 
     useEffect(() => {
-        const lang = (typeof window !== 'undefined'
-            ? localStorage.getItem('armas_lang')
-            : null) || 'en';
+        let cancelled = false;
 
         loadDict(lang).then(d => {
-            setDict({ ...d });
-            // When locale IS English, reuse the same dict as the English fallback
-            if (lang === 'en') setEnDict({ ...d });
+            if (!cancelled) setDict(d);
         });
-        // Always also load the English dictionary for the fallback
-        loadEnDict().then(d => setEnDict({ ...d }));
-    }, []);
 
-    /**
-     * Resolves a value that might be a translation key.
-     * A "key" looks like "someentity.ID.fieldname" — at least two dots.
-     * If the value looks like a key but has no entry in the dictionary,
-     * we fall back to the English dictionary, then to a smart display
-     * of the middle segment (entity ID) rather than the raw key.
-     */
+        // Only load English dict separately when lang is not English
+        if (lang !== 'en') {
+            loadDict('en').then(d => {
+                if (!cancelled) setEnDict(d);
+            });
+        } else {
+            // Reuse the same dict for English fallback
+            loadDict(lang).then(d => {
+                if (!cancelled) setEnDict(d);
+            });
+        }
+
+        return () => { cancelled = true; };
+    }, [lang]);
+
     const resolve = useCallback(
         (value: string | null | undefined): string => {
             if (!value) return '';
-            // Only attempt resolution if the string looks like a translation key
             const parts = value.split('.');
-            if (parts.length < 3) return value;          // not a key pattern → return as-is
+            if (parts.length < 3) return value;
 
-            // 1. Try the current locale dictionary
             const resolved = dict[value];
             if (resolved !== undefined) return resolved;
 
-            // 2. Try the English fallback dictionary
             const enResolved = enDict[value];
             if (enResolved !== undefined) return enResolved;
 
-            // 3. Smart fallback: use the entity-ID segment (middle part)
-            // e.g. 'organization.BSC.orgname' → 'BSC'
-            // e.g. 'document.70114647-6725-4372-8da3-ef6587d99a95.reportype' → '70114647' (short)
             const idSegment = parts[1];
-            // If the ID looks like a UUID, show only the first 8 chars for readability
             const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(idSegment);
             return isUuid ? idSegment.substring(0, 8) : idSegment;
         },

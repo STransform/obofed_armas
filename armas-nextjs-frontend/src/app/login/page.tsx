@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import axiosInstance from '@/lib/axios';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { getMessages, type Lang } from '@/lib/messages';
 
 export default function Login() {
@@ -11,6 +12,7 @@ export default function Login() {
     const { login } = useAuth();
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const router = useRouter();
 
     const [lang, setLang] = useState<Lang>('en');
     useEffect(() => {
@@ -36,7 +38,7 @@ export default function Login() {
             const role = response.data.roles && response.data.roles.length > 0
                 ? response.data.roles[0] : 'USER';
             login(token, role);
-            window.location.href = '/dashboard';
+            router.push('/dashboard');
         } catch (err: any) {
             setError(err.response?.data?.message || 'Login failed');
         } finally {

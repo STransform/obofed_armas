@@ -36,9 +36,8 @@ export default function CorrectedReportsPage() {
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
-        if (!isAuthenticated) return;
         fetchReports();
-    }, [isAuthenticated]);
+    }, []);
 
     const fetchReports = async () => {
         setLoading(true);

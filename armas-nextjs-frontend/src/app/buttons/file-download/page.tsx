@@ -40,9 +40,8 @@ export default function FileDownloadPage() {
     const [assigning, setAssigning] = useState(false);
 
     useEffect(() => {
-        if (!isAuthenticated) return;
         fetchReports();
-    }, [isAuthenticated]);
+    }, []);
 
     const fetchReports = async () => {
         setLoading(true);

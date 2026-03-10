@@ -6,12 +6,13 @@ import java.util.Date;
 import java.util.Set;
 import java.util.stream.Collectors;
 import com.simon.armas_springboot_api.models.Organization;
+
 public class MasterTransactionDTO {
     private Integer id;
     private Date createdDate;
     private Date lastModifiedDate; // Optional, if you want to include last modified date
     private String orgname;
-//     @JsonProperty("fiscal_year") // Serialize as fiscal_year in JSON
+    // @JsonProperty("fiscal_year") // Serialize as fiscal_year in JSON
     private Set<String> dispatchedOrganizationIds;
     private String fiscalYear;
     private String reportype;
@@ -31,15 +32,17 @@ public class MasterTransactionDTO {
     private String responseNeeded;
     private String letterPath;
     private String letterDocname;
+    private String assignmentReason;
 
     // Constructor to map from MasterTransaction
     public MasterTransactionDTO(MasterTransaction mt) {
         this.id = mt.getId();
         this.createdDate = mt.getCreatedDate();
-        this.lastModifiedDate = mt.getLastModifiedDate(); 
+        this.lastModifiedDate = mt.getLastModifiedDate();
         this.orgname = mt.getOrganization() != null ? mt.getOrganization().getOrgname() : null;
         this.fiscalYear = mt.getBudgetYear() != null ? mt.getBudgetYear().getFiscalYear() : null;
-        System.out.println("Mapping MasterTransaction id=" + mt.getId() + ", budgetYear=" + (mt.getBudgetYear() != null ? mt.getBudgetYear().getFiscalYear() : "null")); // Debug log
+        System.out.println("Mapping MasterTransaction id=" + mt.getId() + ", budgetYear="
+                + (mt.getBudgetYear() != null ? mt.getBudgetYear().getFiscalYear() : "null")); // Debug log
         this.reportype = mt.getTransactiondocument() != null ? mt.getTransactiondocument().getReportype()
                 : mt.getReportcategory();
         this.reportstatus = mt.getReportstatus();
@@ -61,61 +64,202 @@ public class MasterTransactionDTO {
         this.responseNeeded = mt.getResponse_needed();
         this.letterPath = mt.getLetterPath();
         this.letterDocname = mt.getLetterDocname();
+        this.assignmentReason = mt.getAssignmentReason();
         this.dispatchedOrganizationIds = mt.getDispatchedOrganizations().stream()
-            .map(Organization::getId)
-            .collect(Collectors.toSet());
+                .map(Organization::getId)
+                .collect(Collectors.toSet());
     }
 
-     public Set<String> getDispatchedOrganizationIds() {
+    public Set<String> getDispatchedOrganizationIds() {
         return dispatchedOrganizationIds;
     }
 
     public void setDispatchedOrganizationIds(Set<String> dispatchedOrganizationIds) {
         this.dispatchedOrganizationIds = dispatchedOrganizationIds;
     }
+
     // Getters and setters
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
-    public Date getCreatedDate() { return createdDate; }
-    public void setCreatedDate(Date createdDate) { this.createdDate = createdDate; }
-    public Date getLastModifiedDate() { return lastModifiedDate; }
-    public void setLastModifiedDate(Date lastModifiedDate) { this.lastModifiedDate = lastModifiedDate; }
-    public String getOrgname() { return orgname; }
-    public void setOrgname(String orgname) { this.orgname = orgname; }
-    public String getFiscalYear() { return fiscalYear; }
-    public void setFiscalYear(String fiscalYear) { this.fiscalYear = fiscalYear; }
-    public String getReportype() { return reportype; }
-    public void setReportype(String reportype) { this.reportype = reportype; }
-    public String getReportstatus() { return reportstatus; }
-    public void setReportstatus(String reportstatus) { this.reportstatus = reportstatus; }
-    public String getDocname() { return docname; }
-    public void setDocname(String docname) { this.docname = docname; }
-    public String getSupportingDocumentPath() { return supportingDocumentPath; }
-    public void setSupportingDocumentPath(String supportingDocumentPath) { this.supportingDocumentPath = supportingDocumentPath; }
-    public String getSupportingDocname() { return supportingDocname; }
-    public void setSupportingDocname(String supportingDocname) { this.supportingDocname = supportingDocname; }
-    public String getSubmittedByAuditorUsername() { return submittedByAuditorUsername; }
-    public void setSubmittedByAuditorUsername(String submittedByAuditorUsername) { this.submittedByAuditorUsername = submittedByAuditorUsername; }
-    public String getUser() { return user; }
-    public void setUser(String user) { this.user = user; }
-    public String getAssignedAuditorUsername() { return assignedAuditorUsername; }
-    public void setAssignedAuditorUsername(String assignedAuditorUsername) { this.assignedAuditorUsername = assignedAuditorUsername; }
-    public String getCreatedBy() { return createdBy; }
-    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
-    public String getAssignedByUsername() { return assignedByUsername; }
-    public void setAssignedByUsername(String assignedByUsername) { this.assignedByUsername = assignedByUsername; }
-    public String getLastModifiedBy() { return lastModifiedBy; }
-    public void setLastModifiedBy(String lastModifiedBy) { this.lastModifiedBy = lastModifiedBy; }
-    public String getApproverUsername() { return approverUsername; }
-    public void setApproverUsername(String approverUsername) { this.approverUsername = approverUsername; }
-    public String getRemarks() { return remarks; }
-    public void setRemarks(String remarks) { this.remarks = remarks; }
-    public String getReason_of_rejection() { return reason_of_rejection; }
-    public void setReason_of_rejection(String reason_of_rejection) { this.reason_of_rejection = reason_of_rejection; }
-    public String getResponseNeeded() { return responseNeeded; }
-    public void setResponseNeeded(String responseNeeded) { this.responseNeeded = responseNeeded; }
-    public String getLetterPath() { return letterPath; }
-    public void setLetterPath(String letterPath) { this.letterPath = letterPath; }
-    public String getLetterDocname() { return letterDocname; }
-    public void setLetterDocname(String letterDocname) { this.letterDocname = letterDocname; }
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public Date getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(Date createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public Date getLastModifiedDate() {
+        return lastModifiedDate;
+    }
+
+    public void setLastModifiedDate(Date lastModifiedDate) {
+        this.lastModifiedDate = lastModifiedDate;
+    }
+
+    public String getOrgname() {
+        return orgname;
+    }
+
+    public void setOrgname(String orgname) {
+        this.orgname = orgname;
+    }
+
+    public String getFiscalYear() {
+        return fiscalYear;
+    }
+
+    public void setFiscalYear(String fiscalYear) {
+        this.fiscalYear = fiscalYear;
+    }
+
+    public String getReportype() {
+        return reportype;
+    }
+
+    public void setReportype(String reportype) {
+        this.reportype = reportype;
+    }
+
+    public String getReportstatus() {
+        return reportstatus;
+    }
+
+    public void setReportstatus(String reportstatus) {
+        this.reportstatus = reportstatus;
+    }
+
+    public String getDocname() {
+        return docname;
+    }
+
+    public void setDocname(String docname) {
+        this.docname = docname;
+    }
+
+    public String getSupportingDocumentPath() {
+        return supportingDocumentPath;
+    }
+
+    public void setSupportingDocumentPath(String supportingDocumentPath) {
+        this.supportingDocumentPath = supportingDocumentPath;
+    }
+
+    public String getAssignmentReason() {
+        return assignmentReason;
+    }
+
+    public void setAssignmentReason(String assignmentReason) {
+        this.assignmentReason = assignmentReason;
+    }
+
+    public String getSupportingDocname() {
+        return supportingDocname;
+    }
+
+    public void setSupportingDocname(String supportingDocname) {
+        this.supportingDocname = supportingDocname;
+    }
+
+    public String getSubmittedByAuditorUsername() {
+        return submittedByAuditorUsername;
+    }
+
+    public void setSubmittedByAuditorUsername(String submittedByAuditorUsername) {
+        this.submittedByAuditorUsername = submittedByAuditorUsername;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    public String getAssignedAuditorUsername() {
+        return assignedAuditorUsername;
+    }
+
+    public void setAssignedAuditorUsername(String assignedAuditorUsername) {
+        this.assignedAuditorUsername = assignedAuditorUsername;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public String getAssignedByUsername() {
+        return assignedByUsername;
+    }
+
+    public void setAssignedByUsername(String assignedByUsername) {
+        this.assignedByUsername = assignedByUsername;
+    }
+
+    public String getLastModifiedBy() {
+        return lastModifiedBy;
+    }
+
+    public void setLastModifiedBy(String lastModifiedBy) {
+        this.lastModifiedBy = lastModifiedBy;
+    }
+
+    public String getApproverUsername() {
+        return approverUsername;
+    }
+
+    public void setApproverUsername(String approverUsername) {
+        this.approverUsername = approverUsername;
+    }
+
+    public String getRemarks() {
+        return remarks;
+    }
+
+    public void setRemarks(String remarks) {
+        this.remarks = remarks;
+    }
+
+    public String getReason_of_rejection() {
+        return reason_of_rejection;
+    }
+
+    public void setReason_of_rejection(String reason_of_rejection) {
+        this.reason_of_rejection = reason_of_rejection;
+    }
+
+    public String getResponseNeeded() {
+        return responseNeeded;
+    }
+
+    public void setResponseNeeded(String responseNeeded) {
+        this.responseNeeded = responseNeeded;
+    }
+
+    public String getLetterPath() {
+        return letterPath;
+    }
+
+    public void setLetterPath(String letterPath) {
+        this.letterPath = letterPath;
+    }
+
+    public String getLetterDocname() {
+        return letterDocname;
+    }
+
+    public void setLetterDocname(String letterDocname) {
+        this.letterDocname = letterDocname;
+    }
 }

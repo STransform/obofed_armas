@@ -342,8 +342,10 @@ public class MasterTransactionController {
     @PreAuthorize("hasRole('ARCHIVER')")
     public ResponseEntity<MasterTransaction> assignAuditor(@PathVariable Integer transactionId,
             @RequestParam String auditorUsername,
+            @RequestParam(required = false) String assignmentReason,
             Principal principal) {
         MasterTransaction transaction = masterTransactionService.assignAuditor(transactionId, auditorUsername,
+                assignmentReason,
                 principal.getName());
         return ResponseEntity.ok(transaction);
     }

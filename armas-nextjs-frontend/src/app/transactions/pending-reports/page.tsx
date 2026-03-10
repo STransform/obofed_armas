@@ -183,7 +183,7 @@ export default function PendingReportsPage() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                                <button onClick={() => handleOpenReassign(t)} className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center justify-center px-3 py-1.5 border border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-md font-medium text-xs">
+                                                <button onClick={() => handleOpenReassign(t)} className="inline-flex items-center justify-center px-3 py-1.5 border border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-md font-medium text-xs transition-colors">
                                                     <UserCog className="w-3.5 h-3.5 mr-1" /> Reassign
                                                 </button>
                                             </td>

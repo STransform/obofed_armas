@@ -192,18 +192,27 @@ export default function RejectedReportsPage() {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <button onClick={() => { setSelectedReport(r); setIsDetailsOpen(true); }} className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="View Details">
-                                                            <Eye className="w-4 h-4" />
+                                                    <div className="flex items-center justify-end gap-2 flex-wrap">
+                                                        <button onClick={() => { setSelectedReport(r); setIsDetailsOpen(true); }} className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-md transition-colors" title="View Details">
+                                                            <Eye className="w-3.5 h-3.5" />
+                                                            Details
                                                         </button>
                                                         {r.docname && (
-                                                            <button onClick={() => handleDownload(r.id, r.docname, 'original')} className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="Download">
-                                                                <Download className="w-4 h-4" />
+                                                            <button onClick={() => handleDownload(r.id, r.docname, 'original')} className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors" title="Download Report">
+                                                                <Download className="w-3.5 h-3.5" />
+                                                                Report
+                                                            </button>
+                                                        )}
+                                                        {r.supportingDocname && (
+                                                            <button onClick={() => handleDownload(r.id, r.supportingDocname, 'supporting')} className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 rounded-md transition-colors" title="Download Findings">
+                                                                <Download className="w-3.5 h-3.5" />
+                                                                Findings
                                                             </button>
                                                         )}
                                                         {isSeniorAuditor && r.reportstatus === 'Rejected' && (
-                                                            <button onClick={() => handleOpenAction(r, 'evaluate')} className="p-1.5 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors" title="Evaluate">
-                                                                <FileSearch className="w-4 h-4" />
+                                                            <button onClick={() => handleOpenAction(r, 'evaluate')} className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-md transition-colors" title="Evaluate">
+                                                                <FileSearch className="w-3.5 h-3.5" />
+                                                                Evaluate
                                                             </button>
                                                         )}
                                                     </div>

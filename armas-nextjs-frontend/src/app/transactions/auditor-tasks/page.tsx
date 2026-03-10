@@ -49,18 +49,43 @@ export default function AuditorTasksPage() {
     const fetchTasks = async () => {
         setLoading(true);
         try {
-            const res = await axiosInstance.get('/transactions/sent-reports');
+            const res = await axiosInstance.get('/transactions/tasks');
             const data = Array.isArray(res.data) ? res.data : [];
+            console.log("Raw tasks data from /transactions/tasks:", JSON.stringify(data, null, 2));
+
+            // Map response fields to match original armas-frontend getMyTasks() mapping
+            const mapped = data.map((task: any) => ({
+                id: task.id,
+                createdDate: task.createdDate,
+                reportstatus: task.reportstatus,
+                orgname: task.orgname ?? task.organization?.orgname ?? null,
+                fiscalYear: task.fiscal_year ?? task.fiscalYear ?? task.budgetYear?.fiscalYear ?? null,
+                reportype: task.reportype ?? task.transactiondocument?.reportype ?? null,
+                docname: task.docname,
+                supportingDocname: task.supportingDocname ?? null,
+                submittedByAuditorUsername: task.submittedByAuditorUsername ?? task.submittedByAuditor?.username ?? null,
+                assignedAuditorUsername: task.assignedAuditorUsername ?? null,
+                remarks: task.remarks ?? null,
+                responseNeeded: task.responseNeeded ?? task.response_needed ?? null,
+                reasonOfRejection: task.reason_of_rejection ?? null,
+                assignmentReason: task.assignmentReason ?? null,
+            }));
+            console.log("Mapped tasks:", JSON.stringify(mapped, null, 2));
+
             let filtered: any[] = [];
             if (isSeniorAuditor) {
-                filtered = data.filter((t: any) => ['Assigned', 'Rejected'].includes(t.reportstatus));
+                filtered = mapped.filter((t: any) => ['Assigned', 'Rejected'].includes(t.reportstatus));
             } else if (isApprover) {
-                filtered = data.filter((t: any) => ['Under Review', 'Corrected'].includes(t.reportstatus));
+                // If approver, they shouldn't just be limited to 'Under Review', 'Corrected' locally if the backend already filters them, but let's keep it safe
+                filtered = mapped.filter((t: any) => ['Under Review', 'Corrected'].includes(t.reportstatus));
             }
+            console.log("Filtered tasks for UI:", JSON.stringify(filtered, null, 2));
+
             setTasks(filtered);
             if (filtered.length === 0) setError('No tasks available for your role.');
             else setError(null);
         } catch (err: any) {
+            console.error("Error fetching tasks:", err);
             setError(err.message || 'Failed to load tasks');
         } finally {
             setLoading(false);
@@ -230,27 +255,46 @@ export default function AuditorTasksPage() {
                                                     {resolve(t.reportype) || 'N/A'}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <button onClick={() => { setSelectedTask(t); setIsDetailsOpen(true); }} className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="View details">
-                                                            <Eye className="w-4 h-4" />
+                                                    <div className="flex items-center justify-end gap-2 flex-wrap">
+                                                        <button onClick={() => { setSelectedTask(t); setIsDetailsOpen(true); }} className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-md transition-colors" title="View details">
+                                                            <Eye className="w-3.5 h-3.5" />
+                                                            Details
                                                         </button>
                                                         {t.docname && (
-                                                            <button onClick={() => handleDownload(t.id, t.docname, 'original')} className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="Download">
-                                                                <Download className="w-4 h-4" />
+                                                            <button
+                                                                onClick={() => handleDownload(t.id, t.docname, 'original')}
+                                                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors"
+                                                                title="Download original report uploaded by the organization"
+                                                            >
+                                                                <Download className="w-3.5 h-3.5" />
+                                                                Report
+                                                            </button>
+                                                        )}
+                                                        {t.supportingDocname && (
+                                                            <button
+                                                                onClick={() => handleDownload(t.id, t.supportingDocname, 'supporting')}
+                                                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 rounded-md transition-colors"
+                                                                title="Download audit findings uploaded by the Senior Auditor"
+                                                            >
+                                                                <Download className="w-3.5 h-3.5" />
+                                                                Findings
                                                             </button>
                                                         )}
                                                         {isSeniorAuditor && (t.reportstatus === 'Assigned' || t.reportstatus === 'Rejected') && (
-                                                            <button onClick={() => handleOpenFindings(t)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" title="Submit Findings">
-                                                                <ClipboardCheck className="w-4 h-4" />
+                                                            <button onClick={() => handleOpenFindings(t)} className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-md transition-colors" title="Submit Findings">
+                                                                <ClipboardCheck className="w-3.5 h-3.5" />
+                                                                Evaluate
                                                             </button>
                                                         )}
                                                         {isApprover && (t.reportstatus === 'Under Review' || t.reportstatus === 'Corrected') && (
                                                             <>
-                                                                <button onClick={() => { setSelectedTask(t); setIsApproveOpen(true); }} className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors" title="Approve">
-                                                                    <CheckCircle className="w-4 h-4" />
+                                                                <button onClick={() => { setSelectedTask(t); setIsApproveOpen(true); }} className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 rounded-md transition-colors" title="Approve">
+                                                                    <CheckCircle className="w-3.5 h-3.5" />
+                                                                    Approve
                                                                 </button>
-                                                                <button onClick={() => handleOpenFindings(t, true)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Reject">
-                                                                    <XCircle className="w-4 h-4" />
+                                                                <button onClick={() => handleOpenFindings(t, true)} className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-colors" title="Reject">
+                                                                    <XCircle className="w-3.5 h-3.5" />
+                                                                    Reject
                                                                 </button>
                                                             </>
                                                         )}
@@ -360,6 +404,16 @@ export default function AuditorTasksPage() {
                             <div><label className="text-gray-500 font-medium">Status</label><div className="p-2 bg-gray-50 border rounded">{selectedTask?.reportstatus || 'N/A'}</div></div>
                             <div><label className="text-gray-500 font-medium">Submitted By</label><div className="p-2 bg-gray-50 border rounded">{selectedTask?.submittedByAuditorUsername || selectedTask?.user || 'N/A'}</div></div>
                         </div>
+
+                        {selectedTask?.assignmentReason && (
+                            <div className="mt-4 col-span-2">
+                                <label className="text-gray-500 font-medium block mb-1">Assignment Reason / Instructions</label>
+                                <div className="p-3 bg-indigo-50 border border-indigo-100 rounded text-sm text-indigo-900 whitespace-pre-wrap">
+                                    {selectedTask.assignmentReason}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="flex justify-end mt-6 border-t pt-4">
                             <button onClick={() => setIsDetailsOpen(false)} className="px-4 py-2 border rounded-md text-sm font-medium">Close</button>
                         </div>

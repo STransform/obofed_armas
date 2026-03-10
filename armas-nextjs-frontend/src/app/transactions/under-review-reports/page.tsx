@@ -182,24 +182,44 @@ export default function UnderReviewReportsPage() {
                                                     {r.remarks || 'N/A'}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <div className="flex items-center justify-end gap-2 flex-wrap">
                                                         {r.docname && (
-                                                            <button onClick={() => handleDownload(r.id, r.docname, 'original')} className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="Download Original">
-                                                                <Download className="w-4 h-4" />
+                                                            <button
+                                                                onClick={() => handleDownload(r.id, r.docname, 'original')}
+                                                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors"
+                                                                title="Download Original"
+                                                            >
+                                                                <Download className="w-3.5 h-3.5" />
+                                                                Report
                                                             </button>
                                                         )}
                                                         {r.supportingDocname && (
-                                                            <button onClick={() => handleDownload(r.id, r.supportingDocname, 'supporting')} className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="Download Findings">
-                                                                <Download className="w-4 h-4" />
+                                                            <button
+                                                                onClick={() => handleDownload(r.id, r.supportingDocname, 'supporting')}
+                                                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 rounded-md transition-colors"
+                                                                title="Download Findings"
+                                                            >
+                                                                <Download className="w-3.5 h-3.5" />
+                                                                Findings
                                                             </button>
                                                         )}
                                                         {isApprover && (
                                                             <>
-                                                                <button onClick={() => { setSelectedReport(r); setIsApproveOpen(true); }} className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors" title="Approve">
-                                                                    <CheckCircle className="w-4 h-4" />
+                                                                <button
+                                                                    onClick={() => { setSelectedReport(r); setIsApproveOpen(true); }}
+                                                                    className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors"
+                                                                    title="Approve"
+                                                                >
+                                                                    <CheckCircle className="w-3.5 h-3.5" />
+                                                                    Approve
                                                                 </button>
-                                                                <button onClick={() => { setSelectedReport(r); setIsRejectOpen(true); }} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Reject">
-                                                                    <XCircle className="w-4 h-4" />
+                                                                <button
+                                                                    onClick={() => { setSelectedReport(r); setIsRejectOpen(true); }}
+                                                                    className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-md transition-colors"
+                                                                    title="Reject"
+                                                                >
+                                                                    <XCircle className="w-3.5 h-3.5" />
+                                                                    Reject
                                                                 </button>
                                                             </>
                                                         )}

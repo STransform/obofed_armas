@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 import com.simon.armas_springboot_api.security.models.Auditable;
 import com.simon.armas_springboot_api.models.User;
 import org.springframework.data.annotation.Transient;
+
 @Entity
 @Table(name = "master_transaction")
 @NoArgsConstructor
@@ -21,7 +22,7 @@ import org.springframework.data.annotation.Transient;
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 @EqualsAndHashCode(callSuper = false)
 public class MasterTransaction extends Auditable<String> {
-   @Id
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
@@ -35,6 +36,9 @@ public class MasterTransaction extends Auditable<String> {
     @ManyToOne
     @JoinColumn(name = "budget_year_id")
     private BudgetYear budgetYear;
+
+    @Column(name = "assignment_reason", length = 2000)
+    private String assignmentReason;
 
     private String reportcategory;
     private String filepath;
@@ -51,13 +55,9 @@ public class MasterTransaction extends Auditable<String> {
     private String current_user_director;
     @Transient
     private String current_user_orgtype;
-@ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
-@JoinTable(
-    name = "transaction_dispatched_organizations",
-    joinColumns = @JoinColumn(name = "transaction_id"),
-    inverseJoinColumns = @JoinColumn(name = "organization_id")
-)
-private Set<Organization> dispatchedOrganizations = new HashSet<>();
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @JoinTable(name = "transaction_dispatched_organizations", joinColumns = @JoinColumn(name = "transaction_id"), inverseJoinColumns = @JoinColumn(name = "organization_id"))
+    private Set<Organization> dispatchedOrganizations = new HashSet<>();
     @ManyToOne
     @JoinColumn(name = "user_id")
     @JsonBackReference("user-transactions")
@@ -89,34 +89,90 @@ private Set<Organization> dispatchedOrganizations = new HashSet<>();
     private User assignedBy; // Tracks ARCHIVER who assigned the task
 
     // Getters and Setters
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
-    public String getDocname() { return docname; }
-    public void setDocname(String docname) { this.docname = docname; }
-    public String getReportstatus() { return reportstatus; }
-    public void setReportstatus(String reportstatus) { this.reportstatus = reportstatus; }
-    public String getRemarks() { return remarks; }
-    public void setRemarks(String remarks) { this.remarks = remarks; }
-    public String getReason_of_rejection() { return reason_of_rejection; }
-    public void setReason_of_rejection(String reason_of_rejection) { this.reason_of_rejection = reason_of_rejection; }
-    public String getResponse_needed() { return response_needed; }
-    public void setResponse_needed(String response_needed) { this.response_needed = response_needed; }
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getDocname() {
+        return docname;
+    }
+
+    public void setDocname(String docname) {
+        this.docname = docname;
+    }
+
+    public String getReportstatus() {
+        return reportstatus;
+    }
+
+    public void setReportstatus(String reportstatus) {
+        this.reportstatus = reportstatus;
+    }
+
+    public String getRemarks() {
+        return remarks;
+    }
+
+    public void setRemarks(String remarks) {
+        this.remarks = remarks;
+    }
+
+    public String getReason_of_rejection() {
+        return reason_of_rejection;
+    }
+
+    public void setReason_of_rejection(String reason_of_rejection) {
+        this.reason_of_rejection = reason_of_rejection;
+    }
+
+    public String getResponse_needed() {
+        return response_needed;
+    }
+
+    public void setResponse_needed(String response_needed) {
+        this.response_needed = response_needed;
+    }
+
     // public String getFiscal_year() { return fiscal_year; }
-    // public void setFiscal_year(String fiscal_year) { this.fiscal_year = fiscal_year; }
-    public String getReportcategory() { return reportcategory; }
-    public void setReportcategory(String reportcategory) { this.reportcategory = reportcategory; }
-    public String getFilepath() { return filepath; }
-    public void setFilepath(String filepath) { this.filepath = filepath; }
-    public String getSupportingDocumentPath() { return supportingDocumentPath; }
-    public void setSupportingDocumentPath(String supportingDocumentPath) { this.supportingDocumentPath = supportingDocumentPath; }
-     public String getSupportingDocname() {
+    // public void setFiscal_year(String fiscal_year) { this.fiscal_year =
+    // fiscal_year; }
+    public String getReportcategory() {
+        return reportcategory;
+    }
+
+    public void setReportcategory(String reportcategory) {
+        this.reportcategory = reportcategory;
+    }
+
+    public String getFilepath() {
+        return filepath;
+    }
+
+    public void setFilepath(String filepath) {
+        this.filepath = filepath;
+    }
+
+    public String getSupportingDocumentPath() {
+        return supportingDocumentPath;
+    }
+
+    public void setSupportingDocumentPath(String supportingDocumentPath) {
+        this.supportingDocumentPath = supportingDocumentPath;
+    }
+
+    public String getSupportingDocname() {
         return supportingDocname;
     }
-  
+
     public void setSupportingDocname(String supportingDocname) {
         this.supportingDocname = supportingDocname;
     }
-        public Set<Organization> getDispatchedOrganizations() {
+
+    public Set<Organization> getDispatchedOrganizations() {
         return dispatchedOrganizations;
     }
 
@@ -124,18 +180,54 @@ private Set<Organization> dispatchedOrganizations = new HashSet<>();
         this.dispatchedOrganizations = dispatchedOrganizations;
     }
 
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
-    public Organization getOrganization() { return organization; }
-    public void setOrganization(Organization organization) { this.organization = organization; }
-    public User getUser2() { return user2; }
-    public void setUser2(User user2) { this.user2 = user2; }
-    public Document getTransactiondocument() { return transactiondocument; }
-    public void setTransactiondocument(Document transactiondocument) { this.transactiondocument = transactiondocument; }
-    public User getSubmittedByAuditor() { return submittedByAuditor; }
-    public void setSubmittedByAuditor(User submittedByAuditor) { this.submittedByAuditor = submittedByAuditor; }
-    public User getAssignedBy() { return assignedBy; }
-    public void setAssignedBy(User assignedBy) { this.assignedBy = assignedBy; }
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Organization getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(Organization organization) {
+        this.organization = organization;
+    }
+
+    public User getUser2() {
+        return user2;
+    }
+
+    public void setUser2(User user2) {
+        this.user2 = user2;
+    }
+
+    public Document getTransactiondocument() {
+        return transactiondocument;
+    }
+
+    public void setTransactiondocument(Document transactiondocument) {
+        this.transactiondocument = transactiondocument;
+    }
+
+    public User getSubmittedByAuditor() {
+        return submittedByAuditor;
+    }
+
+    public void setSubmittedByAuditor(User submittedByAuditor) {
+        this.submittedByAuditor = submittedByAuditor;
+    }
+
+    public User getAssignedBy() {
+        return assignedBy;
+    }
+
+    public void setAssignedBy(User assignedBy) {
+        this.assignedBy = assignedBy;
+    }
+
     public BudgetYear getBudgetYear() {
         return budgetYear;
     }
@@ -143,8 +235,28 @@ private Set<Organization> dispatchedOrganizations = new HashSet<>();
     public void setBudgetYear(BudgetYear budgetYear) {
         this.budgetYear = budgetYear;
     }
-    public String getLetterPath() { return letterPath; }
-    public void setLetterPath(String letterPath) { this.letterPath = letterPath; }
-    public String getLetterDocname() { return letterDocname; }
-    public void setLetterDocname(String letterDocname) { this.letterDocname = letterDocname; }
+
+    public String getLetterPath() {
+        return letterPath;
+    }
+
+    public void setLetterPath(String letterPath) {
+        this.letterPath = letterPath;
+    }
+
+    public String getLetterDocname() {
+        return letterDocname;
+    }
+
+    public void setLetterDocname(String letterDocname) {
+        this.letterDocname = letterDocname;
+    }
+
+    public String getAssignmentReason() {
+        return assignmentReason;
+    }
+
+    public void setAssignmentReason(String assignmentReason) {
+        this.assignmentReason = assignmentReason;
+    }
 }

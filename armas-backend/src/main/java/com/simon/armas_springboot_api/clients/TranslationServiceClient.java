@@ -8,7 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
-@FeignClient(name = "translation-service", configuration = FeignConfig.class)
+@FeignClient(name = "translation-service", url = "${translation-service.url}", configuration = FeignConfig.class)
 public interface TranslationServiceClient {
 
     /**

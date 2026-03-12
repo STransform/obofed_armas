@@ -16,13 +16,6 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://localhost:8080/realms/oss2-realm
-          jwk-set-uri: http://localhost:8080/realms/oss2-realm/protocol/openid-connect/certs
-
 eureka:
   client:
     service-url:

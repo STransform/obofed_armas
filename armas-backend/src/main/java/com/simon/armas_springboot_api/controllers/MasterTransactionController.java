@@ -11,6 +11,7 @@ import com.simon.armas_springboot_api.repositories.MasterTransactionRepository;
 import com.simon.armas_springboot_api.repositories.OrganizationRepository;
 import com.simon.armas_springboot_api.repositories.UserRepository;
 import com.simon.armas_springboot_api.services.MasterTransactionService;
+import com.simon.armas_springboot_api.services.UserService;
 import com.simon.armas_springboot_api.clients.TranslationServiceClient;
 import com.simon.armas_springboot_api.dto.UserDTO;
 import com.simon.armas_springboot_api.models.User;
@@ -64,6 +65,9 @@ public class MasterTransactionController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserService userService;
 
     @Autowired
     private MasterTransactionService masterTransactionService;
@@ -635,7 +639,7 @@ public class MasterTransactionController {
             Map<String, Object> stats = new HashMap<>();
             stats.put("totalOrganizations", masterTransactionService.getTotalOrganizations());
             stats.put("totalReportTypes", masterTransactionService.getTotalReportTypes());
-            stats.put("totalUsers", userRepository.count());
+            stats.put("totalUsers", userService.getUserCount());
             return ResponseEntity.ok(stats);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

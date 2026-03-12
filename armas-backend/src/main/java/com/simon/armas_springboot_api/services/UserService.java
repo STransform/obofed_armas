@@ -307,6 +307,10 @@ public class UserService {
         return convertToDTO(user);
     }
 
+    public long getUserCount() {
+        return userRepository.count();
+    }
+
     public void resetUserPassword(Long userId, String newPassword, String confirmPassword) {
         if (StringUtils.isBlank(newPassword) || StringUtils.isBlank(confirmPassword)) {
             throw new IllegalArgumentException("New password and confirm password are required");

@@ -78,7 +78,7 @@ export default function FileHistoryPage() {
 
     useEffect(() => { setCurrentPage(1); }, [filterText]);
 
-    if (!isAuthenticated) return <div className="p-8">Please log in.</div>;
+    if (!isAuthenticated) return null;
 
     return (
         <div className="flex h-screen bg-gray-50 overflow-hidden">
@@ -158,7 +158,7 @@ export default function FileHistoryPage() {
                                                     {r.fiscal_year || r.fiscalYear || 'N/A'}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <div className="flex justify-end gap-2">
                                                         {r.docname && (
                                                             <button onClick={() => handleDownload(r.id, r.docname)} className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="Download Report">
                                                                 <Download className="w-4 h-4" />

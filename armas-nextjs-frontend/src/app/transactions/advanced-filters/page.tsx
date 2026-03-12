@@ -102,7 +102,7 @@ export default function AdvancedFiltersPage() {
 
     const isReportType = filterType === 'reports-by-org' || filterType === 'feedback-senders';
 
-    if (!isAuthenticated) return <div className="p-8">Please log in.</div>;
+    if (!isAuthenticated) return null;
 
     return (
         <div className="flex h-screen bg-gray-50 overflow-hidden">

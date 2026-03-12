@@ -108,7 +108,7 @@ export default function Dashboard() {
         return () => { isMounted = false; };
     }, [selectedFiscalYear, isAuthenticated]);
 
-    if (!isAuthenticated) return <div className="p-8">Please log in to view the dashboard.</div>;
+    if (!isAuthenticated) return null;
 
     if (globalLoading) {
         return (

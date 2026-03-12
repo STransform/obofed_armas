@@ -12,9 +12,18 @@
     "aboutTitle": "Addis Ababa City Administration Finance Bureau",
     "aboutBody": "The Addis Ababa Finance Bureau (AAFB) is the principal institution responsible for public financial management, budget planning, expenditure control, and financial audit oversight across all Addis Ababa sub-cities and sector offices. ARMAS was developed to modernise and digitise the bureau's audit and inspection reporting workflows.",
     "aboutStats": [
-      { "value": "14+", "label": "Sub-Cities Covered" },
-      { "value": "60+", "label": "Sector Offices" },
-      { "value": "100%", "label": "Digital Workflows" }
+      {
+        "value": "14+",
+        "label": "Sub-Cities Covered"
+      },
+      {
+        "value": "60+",
+        "label": "Sector Offices"
+      },
+      {
+        "value": "100%",
+        "label": "Digital Workflows"
+      }
     ],
     "visionLabel": "Our Vision",
     "visionTitle": "Vision",
@@ -25,26 +34,80 @@
     "valuesLabel": "Our Values",
     "valuesTitle": "Core Values",
     "values": [
-      { "icon": "shield", "title": "Integrity", "body": "We uphold the highest standards of ethical conduct, honesty, and transparency in all our operations and decisions." },
-      { "icon": "users", "title": "Accountability", "body": "Every official and department is held to clear performance standards, with outcomes reported and reviewed openly." },
-      { "icon": "chart", "title": "Excellence", "body": "We are committed to continuous improvement in financial management practices to deliver the best services to citizens." },
-      { "icon": "globe", "title": "Inclusiveness", "body": "We value diversity and ensure equitable access to public resources and financial services across all communities." },
-      { "icon": "check", "title": "Rule of Law", "body": "All financial activities are conducted in full compliance with Ethiopian federal and city-level legal frameworks." },
-      { "icon": "lock", "title": "Transparency", "body": "Public funds and audit findings are reported openly, fostering public trust and confidence in government institutions." }
+      {
+        "icon": "shield",
+        "title": "Integrity",
+        "body": "We uphold the highest standards of ethical conduct, honesty, and transparency in all our operations and decisions."
+      },
+      {
+        "icon": "users",
+        "title": "Accountability",
+        "body": "Every official and department is held to clear performance standards, with outcomes reported and reviewed openly."
+      },
+      {
+        "icon": "chart",
+        "title": "Excellence",
+        "body": "We are committed to continuous improvement in financial management practices to deliver the best services to citizens."
+      },
+      {
+        "icon": "globe",
+        "title": "Inclusiveness",
+        "body": "We value diversity and ensure equitable access to public resources and financial services across all communities."
+      },
+      {
+        "icon": "check",
+        "title": "Rule of Law",
+        "body": "All financial activities are conducted in full compliance with Ethiopian federal and city-level legal frameworks."
+      },
+      {
+        "icon": "lock",
+        "title": "Transparency",
+        "body": "Public funds and audit findings are reported openly, fostering public trust and confidence in government institutions."
+      }
     ],
     "trustTitle": "Why institutions trust ARMAS",
     "pillars": [
-      { "icon": "report", "title": "Centralised Reporting", "body": "Submit, review, and approve institutional reports from all departments through a single, auditable pipeline." },
-      { "icon": "audit", "title": "Full Audit Trails", "body": "Every action is timestamped and logged in an immutable record, ensuring complete accountability." },
-      { "icon": "docs", "title": "Smart Document Management", "body": "Structured document workflows ensure findings, letters and reports are always traceable and retrievable." },
-      { "icon": "access", "title": "Role-Based Access", "body": "Fine-grained permissions ensure each user sees and does exactly what their role requires — nothing more." },
-      { "icon": "analytics", "title": "Real-Time Analytics", "body": "Executive dashboards surface the metrics that matter, updated in real time across all reporting units." },
-      { "icon": "security", "title": "256-bit Security", "body": "Enterprise-grade encryption and Keycloak authentication protect all personnel data and sensitive reports." }
+      {
+        "icon": "report",
+        "title": "Centralised Reporting",
+        "body": "Submit, review, and approve institutional reports from all departments through a single, auditable pipeline."
+      },
+      {
+        "icon": "audit",
+        "title": "Full Audit Trails",
+        "body": "Every action is timestamped and logged in an immutable record, ensuring complete accountability."
+      },
+      {
+        "icon": "docs",
+        "title": "Smart Document Management",
+        "body": "Structured document workflows ensure findings, letters and reports are always traceable and retrievable."
+      },
+      {
+        "icon": "access",
+        "title": "Role-Based Access",
+        "body": "Fine-grained permissions ensure each user sees and does exactly what their role requires — nothing more."
+      },
+      {
+        "icon": "analytics",
+        "title": "Real-Time Analytics",
+        "body": "Executive dashboards surface the metrics that matter, updated in real time across all reporting units."
+      },
+      {
+        "icon": "security",
+        "title": "256-bit Security",
+        "body": "Enterprise-grade encryption and Keycloak authentication protect all personnel data and sensitive reports."
+      }
     ],
     "statsLabel": "Platform at a glance",
     "stats": [
-      { "key": "organizations", "label": "Organizations" },
-      { "key": "users", "label": "Active Users" }
+      {
+        "key": "organizations",
+        "label": "Organizations"
+      },
+      {
+        "key": "users",
+        "label": "Active Users"
+      }
     ],
     "capLabel": "Platform Capabilities",
     "portalTitle": "ARMAS Services",

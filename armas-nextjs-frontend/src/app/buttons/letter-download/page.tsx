@@ -75,7 +75,7 @@ export default function LetterDownloadPage() {
         (r.reportstatus || '').toLowerCase().includes(filterText.toLowerCase())
     );
 
-    if (!isAuthenticated) return <div className="p-8">Please log in.</div>;
+    if (!isAuthenticated) return null;
 
     return (
         <div className="flex h-screen bg-gray-50 overflow-hidden">

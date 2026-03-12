@@ -7,6 +7,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getMessages, type Lang } from '@/lib/messages';
 import axiosInstance from '@/lib/axios';
+import * as Dialog from '@radix-ui/react-dialog';
+import { UserCog, Download, Search } from 'lucide-react';
 
 export default function PendingReportsPage() {
     const { isAuthenticated, userRole } = useAuth();
@@ -107,7 +109,7 @@ export default function PendingReportsPage() {
     // Reset pagination when search changes
     useEffect(() => { setCurrentPage(1); }, [searchTerm]);
 
-    if (!isAuthenticated) return <div className="p-8">Please log in.</div>;
+    if (!isAuthenticated) return null;
     if (!isArchiver) return <div className="p-8 text-red-600">Unauthorized access. ARCHIVER role required.</div>;
 
     return (

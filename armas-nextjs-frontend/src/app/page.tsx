@@ -230,25 +230,6 @@ export default function HomePage() {
                         </div>
                     </div>
 
-                    {/* Stats strip */}
-                    <div className="relative border-t border-white/10 bg-[#001845]/60 backdrop-blur-sm">
-                        <div className="mx-auto max-w-7xl px-5 sm:px-8 py-5 flex items-center justify-center divide-x divide-white/10 flex-wrap">
-                            <div className="flex flex-col items-center py-2 px-10">
-                                <span className="text-2xl font-black text-white">14+</span>
-                                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mt-0.5">Sub-Cities</span>
-                            </div>
-                            <div className="flex flex-col items-center py-2 px-10">
-                                <span className="text-2xl font-black text-white">60+</span>
-                                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mt-0.5">Sector Offices</span>
-                            </div>
-                            {t.stats.map((s: any, i: number) => (
-                                <div key={i} className="flex flex-col items-center py-2 px-10">
-                                    <span className="text-2xl font-black text-white">{dynamicStats[s.key] !== undefined ? dynamicStats[s.key] : "..."}</span>
-                                    <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mt-0.5">{s.label}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </section>
 
                 {/* ── ABOUT THE BUREAU ── */}
@@ -267,14 +248,6 @@ export default function HomePage() {
                                 <p className="text-slate-600 text-lg leading-relaxed mb-10">
                                     {t.aboutBody}
                                 </p>
-                                <div className="grid grid-cols-3 gap-4">
-                                    {t.aboutStats.map((s: any, i: number) => (
-                                        <div key={i} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm text-center hover:-translate-y-1 transition-transform">
-                                            <p className="text-3xl font-black text-[#003580]">{s.value}</p>
-                                            <p className="text-xs font-semibold text-slate-500 mt-1 uppercase tracking-wide">{s.label}</p>
-                                        </div>
-                                    ))}
-                                </div>
                             </div>
 
                             {/* Right decorative block */}

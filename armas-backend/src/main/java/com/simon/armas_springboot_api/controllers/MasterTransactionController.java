@@ -500,8 +500,22 @@ public class MasterTransactionController {
 
     @GetMapping("/rejected-reports")
     @PreAuthorize("hasAnyRole('ARCHIVER', 'SENIOR_AUDITOR', 'APPROVER')")
-    public ResponseEntity<List<MasterTransaction>> getRejectedReports() {
-        List<MasterTransaction> reports = masterTransactionRepository.findByReportStatus("Rejected");
+    public ResponseEntity<List<MasterTransaction>> getRejectedReports(Principal principal) {
+        User user = userRepository.findByUsername(principal.getName());
+        if (user == null) {
+            throw new IllegalStateException("User not found: " + principal.getName());
+        }
+
+        boolean isSeniorAuditor = user.getRoles().stream()
+                .anyMatch(role -> "SENIOR_AUDITOR".equals(role.getDescription()));
+
+        List<MasterTransaction> reports;
+        if (isSeniorAuditor) {
+            reports = masterTransactionRepository.findRejectedReportsByAuditor(user.getId());
+        } else {
+            reports = masterTransactionRepository.findByReportStatus("Rejected");
+        }
+        
         return ResponseEntity.ok(reports);
     }
 

@@ -57,6 +57,7 @@ interface Notification {
 }
 
 interface CurrentUserSummary {
+    username?: string | null;
     orgname?: string | null;
 }
 
@@ -111,6 +112,7 @@ export function Header() {
                 if (cancelled) return;
 
                 const nextUser: CurrentUserSummary = {
+                    username: res.data?.username || null,
                     orgname: res.data?.orgname || res.data?.organization?.orgname || null,
                 };
                 setCurrentUser(nextUser);
@@ -219,7 +221,7 @@ export function Header() {
         }
     };
 
-    const roleLabel = msgs.roles[userRole as keyof typeof msgs.roles] || userRole;
+    const usernameLabel = currentUser?.username || (msgs.roles[userRole as keyof typeof msgs.roles] || userRole);
     const orgLabel = currentUser?.orgname ? resolve(currentUser.orgname) || currentUser.orgname : null;
 
     return (
@@ -230,7 +232,7 @@ export function Header() {
                     <span className="text-sm text-gray-400">ARMAS</span>
                     <span className="text-gray-300">/</span>
                     <span className="text-sm font-medium text-gray-700">
-                        {roleLabel}
+                        {usernameLabel}
                     </span>
                     {orgLabel && (
                         <>
@@ -308,7 +310,7 @@ export function Header() {
                             <UserCircle className="w-5 h-5 text-indigo-600" />
                         </div>
                         <span className="text-sm font-medium text-gray-700 hidden sm:block">
-                            {roleLabel}
+                            {usernameLabel}
                         </span>
                     </div>
 

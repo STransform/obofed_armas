@@ -7,6 +7,7 @@ import { Header } from '@/components/Header';
 import { Sidebar } from '@/components/Sidebar';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { getMessages, type Lang } from '@/lib/messages';
+import { preloadTranslations } from '@/hooks/useTranslation';
 
 const EMPTY_GLOBAL_STATS = {
     totalOrganizations: 0,
@@ -36,6 +37,11 @@ export default function Dashboard() {
         window.addEventListener('storage', handler);
         return () => window.removeEventListener('storage', handler);
     }, []);
+
+    useEffect(() => {
+        preloadTranslations(lang);
+        preloadTranslations('en');
+    }, [lang]);
     const msgs = getMessages(lang);
 
     // UI state
@@ -52,10 +58,9 @@ export default function Dashboard() {
 
         const fetchGlobalData = async () => {
             try {
-                const [statsRes, yearsRes, transRes] = await Promise.all([
+                const [statsRes, yearsRes] = await Promise.all([
                     axiosInstance.get('/transactions/global-stats').catch(() => ({ data: EMPTY_GLOBAL_STATS })),
-                    axiosInstance.get('/transactions/budget-years').catch(() => ({ data: [] })),
-                    axiosInstance.get('/transactions/translations?lang=en').catch(() => ({ data: { hello: 'Welcome' } }))
+                    axiosInstance.get('/transactions/budget-years').catch(() => ({ data: [] }))
                 ]);
 
                 if (isMounted) {

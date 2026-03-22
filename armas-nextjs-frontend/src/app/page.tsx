@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
     Globe,
@@ -73,7 +74,11 @@ const VALUE_COLORS = [
     { bg: "bg-cyan-50", border: "border-cyan-100", icon: "text-cyan-600", dot: "bg-cyan-500" },
 ];
 
+const PUBLIC_STATS_CACHE_KEY = "armas_public_stats_cache";
+const PUBLIC_STATS_CACHE_TTL_MS = 5 * 60 * 1000;
+
 export default function HomePage() {
+    const router = useRouter();
     const [lang, setLang] = useState<Lang>("en");
     const [mounted, setMounted] = useState(false);
     const [dynamicStats, setDynamicStats] = useState<{ [key: string]: string | number }>({
@@ -86,15 +91,50 @@ export default function HomePage() {
         const s = localStorage.getItem("armas_lang") as Lang | null;
         if (s && (s === "en" || s === "am" || s === "om")) setLang(s);
 
-        fetch(process.env.NEXT_PUBLIC_API_URL + "/transactions/public-stats")
-            .then(res => res.json())
-            .then(data => {
-                if (data.organizations !== undefined && data.users !== undefined) {
-                    setDynamicStats(data);
+        try {
+            const cached = sessionStorage.getItem(PUBLIC_STATS_CACHE_KEY);
+            if (cached) {
+                const parsed = JSON.parse(cached) as {
+                    timestamp: number;
+                    data: { [key: string]: string | number };
+                };
+                if ((Date.now() - parsed.timestamp) < PUBLIC_STATS_CACHE_TTL_MS) {
+                    setDynamicStats(parsed.data);
                 }
-            })
-            .catch(console.error);
-    }, []);
+            }
+        } catch {
+            // Ignore cache parse issues and continue with a fresh fetch.
+        }
+
+        const fetchStats = () => {
+            fetch(process.env.NEXT_PUBLIC_API_URL + "/transactions/public-stats")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.organizations !== undefined && data.users !== undefined) {
+                        setDynamicStats(data);
+                        try {
+                            sessionStorage.setItem(PUBLIC_STATS_CACHE_KEY, JSON.stringify({
+                                timestamp: Date.now(),
+                                data,
+                            }));
+                        } catch {
+                            // Ignore storage failures.
+                        }
+                    }
+                })
+                .catch(console.error);
+        };
+
+        fetchStats();
+
+        if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+            const idleId = window.requestIdleCallback(() => router.prefetch("/login"), { timeout: 1000 });
+            return () => window.cancelIdleCallback(idleId);
+        }
+
+        const timeoutId = globalThis.setTimeout(() => router.prefetch("/login"), 200);
+        return () => globalThis.clearTimeout(timeoutId);
+    }, [router]);
 
     const pick = (code: Lang) => {
         setLang(code);

@@ -18,6 +18,31 @@ function timeAgo(dateStr: string): string {
     return `${Math.floor(diff / 86400)}d ago`;
 }
 
+function readFreshNotificationsCache(): {
+    notifications: Notification[];
+    unreadCount: number;
+} | null {
+    try {
+        const raw = sessionStorage.getItem(NOTIFICATIONS_CACHE_KEY);
+        if (!raw) return null;
+
+        const cached = JSON.parse(raw) as {
+            timestamp: number;
+            notifications: Notification[];
+            unreadCount: number;
+        };
+
+        if ((Date.now() - cached.timestamp) > NOTIFICATIONS_CACHE_TTL_MS) return null;
+
+        return {
+            notifications: Array.isArray(cached.notifications) ? cached.notifications : [],
+            unreadCount: typeof cached.unreadCount === 'number' ? cached.unreadCount : 0,
+        };
+    } catch {
+        return null;
+    }
+}
+
 interface Notification {
     id: number;
     title: string;
@@ -59,22 +84,10 @@ export function Header() {
     const isManager = userRole === 'MANAGER';
 
     useEffect(() => {
-        try {
-            const raw = sessionStorage.getItem(NOTIFICATIONS_CACHE_KEY);
-            if (!raw) return;
-
-            const cached = JSON.parse(raw) as {
-                timestamp: number;
-                notifications: Notification[];
-                unreadCount: number;
-            };
-
-            if ((Date.now() - cached.timestamp) > NOTIFICATIONS_CACHE_TTL_MS) return;
-
-            setNotifications(Array.isArray(cached.notifications) ? cached.notifications : []);
-            setUnreadCount(typeof cached.unreadCount === 'number' ? cached.unreadCount : 0);
-        } catch {
-            // Ignore corrupted cache and continue with a fresh fetch.
+        const cached = readFreshNotificationsCache();
+        if (cached) {
+            setNotifications(cached.notifications);
+            setUnreadCount(cached.unreadCount);
         }
     }, []);
 
@@ -102,9 +115,23 @@ export function Header() {
     }, []);
 
     useEffect(() => {
-        fetchNotifications();
+        let cleanupPrefetch: (() => void) | undefined;
+        const cached = readFreshNotificationsCache();
+        if (!cached) {
+            fetchNotifications();
+        } else if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+            const idleId = window.requestIdleCallback(() => fetchNotifications(), { timeout: 2000 });
+            cleanupPrefetch = () => window.cancelIdleCallback(idleId);
+        } else {
+            const timeoutId = globalThis.setTimeout(() => fetchNotifications(), 1500);
+            cleanupPrefetch = () => globalThis.clearTimeout(timeoutId);
+        }
+
         const interval = setInterval(fetchNotifications, 120000); // poll every 2 minutes
-        return () => clearInterval(interval);
+        return () => {
+            cleanupPrefetch?.();
+            clearInterval(interval);
+        };
     }, [fetchNotifications]);
 
     // Close dropdown when clicking outside

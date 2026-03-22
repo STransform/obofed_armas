@@ -171,7 +171,7 @@ export default function NoticesPage() {
                     <div className="grid gap-8 lg:grid-cols-[1.1fr,0.9fr]">
                         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                             <h2 className="text-xl font-bold text-slate-900">{editingId ? 'Edit Notice' : 'Create Notice'}</h2>
-                            <p className="mt-1 text-sm text-slate-500">Approvers can post blog-style notices with attachments.</p>
+                            {/* <p className="mt-1 text-sm text-slate-500">Approvers can post blog-style notices with attachments.</p> */}
 
                             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                                 <div>

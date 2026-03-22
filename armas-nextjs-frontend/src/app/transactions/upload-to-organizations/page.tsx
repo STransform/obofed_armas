@@ -5,9 +5,11 @@ import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
 import axiosInstance from '@/lib/axios';
+import { getMessages, type Lang } from '@/lib/messages';
 
 export default function UploadToOrganizationsPage() {
     const { isAuthenticated } = useAuth();
+    const [lang, setLang] = useState<Lang>('en');
 
     const [organizations, setOrganizations] = useState<any[]>([]);
     const [selectedOrganizations, setSelectedOrganizations] = useState<string[]>([]);
@@ -15,6 +17,19 @@ export default function UploadToOrganizationsPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+
+    useEffect(() => {
+        const s = localStorage.getItem('armas_lang') as Lang | null;
+        if (s && (s === 'en' || s === 'am' || s === 'om')) setLang(s);
+        const handler = () => {
+            const v = localStorage.getItem('armas_lang') as Lang | null;
+            if (v && (v === 'en' || v === 'am' || v === 'om')) setLang(v);
+        };
+        window.addEventListener('storage', handler);
+        return () => window.removeEventListener('storage', handler);
+    }, []);
+
+    const msgs = getMessages(lang).uploadToOrganizationsPage;
 
     useEffect(() => {
         if (!isAuthenticated) return;
@@ -70,9 +85,9 @@ export default function UploadToOrganizationsPage() {
                 });
 
             setOrganizations(mergedOrganizations);
-            setError(mergedOrganizations.length === 0 ? 'No organizations were returned by the server.' : null);
+            setError(mergedOrganizations.length === 0 ? msgs.noOrganizationsReturned : null);
         } catch (err) {
-            setError('Failed to load organizations.');
+            setError(msgs.failedToLoadOrganizations);
         }
     };
 
@@ -81,8 +96,8 @@ export default function UploadToOrganizationsPage() {
         setError(null);
         setSuccess(null);
 
-        if (!file) return setError('Please select a letter attachment.');
-        if (selectedOrganizations.length === 0) return setError('Please select at least one target organization.');
+        if (!file) return setError(msgs.selectLetterAttachment);
+        if (selectedOrganizations.length === 0) return setError(msgs.selectAtLeastOneOrganization);
 
         setLoading(true);
         const formData = new FormData();
@@ -93,12 +108,12 @@ export default function UploadToOrganizationsPage() {
             await axiosInstance.post('/transactions/dispatch-letter', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            setSuccess('Central dispatch successfully completed.');
+            setSuccess(msgs.dispatchSuccess);
             setFile(null);
             setSelectedOrganizations([]);
             (e.target as HTMLFormElement).reset();
         } catch (err: any) {
-            setError(err.response?.data?.error || err.message || 'Dispatch failed.');
+            setError(err.response?.data?.error || err.message || msgs.dispatchFailed);
         } finally {
             setLoading(false);
         }
@@ -119,8 +134,8 @@ export default function UploadToOrganizationsPage() {
                 <Header />
                 <main className="flex-1 overflow-y-auto p-8 max-w-4xl w-full mx-auto">
                     <div className="mb-6">
-                        <h1 className="text-3xl font-bold text-gray-900">Upload to Organizations</h1>
-                        <p className="text-sm text-gray-500 mt-1">Multi-cast formal letters and dispatch them to the selected reporting entities concurrently.</p>
+                        <h1 className="text-3xl font-bold text-gray-900">{msgs.title}</h1>
+                        <p className="text-sm text-gray-500 mt-1">{msgs.subtitle}</p>
                     </div>
 
                     {error && <div className="mb-4 bg-red-50 text-red-700 p-4 rounded-md border border-red-200">{error}</div>}
@@ -130,9 +145,9 @@ export default function UploadToOrganizationsPage() {
                         <form onSubmit={handleSubmit} className="space-y-6">
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">1. Select Target Organizations</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{msgs.selectTargetOrganizations}</label>
                                 <div className="border border-gray-300 rounded-md p-4 bg-gray-50 max-h-60 overflow-y-auto space-y-2">
-                                    {organizations.length === 0 ? <span className="text-gray-500 text-sm">No organizations available.</span> : organizations.map(org => (
+                                    {organizations.length === 0 ? <span className="text-gray-500 text-sm">{msgs.noOrganizationsAvailable}</span> : organizations.map(org => (
                                         <label key={org.id} className="flex items-center space-x-3 p-2 hover:bg-white rounded border border-transparent hover:border-gray-200 transition-colors cursor-pointer">
                                             <input
                                                 type="checkbox"
@@ -145,20 +160,20 @@ export default function UploadToOrganizationsPage() {
                                     ))}
                                 </div>
                                 <div className="mt-2 text-sm text-gray-500">
-                                    {selectedOrganizations.length} selected.
+                                    {selectedOrganizations.length} {msgs.selectedCount}
                                 </div>
                             </div>
 
                             <hr className="border-gray-100" />
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">2. Attach Dispatch Document</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{msgs.attachDispatchDocument}</label>
                                 <input
                                     type="file"
                                     onChange={e => setFile(e.target.files?.[0] || null)}
                                     className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                                 />
-                                <p className="mt-2 text-xs text-gray-500">PDF, DOCX formats. Maximum size 500MB.</p>
+                                <p className="mt-2 text-xs text-gray-500">{msgs.attachmentHint}</p>
                             </div>
 
                             <div className="pt-4 flex justify-end">
@@ -167,7 +182,7 @@ export default function UploadToOrganizationsPage() {
                                     disabled={loading || organizations.length === 0}
                                     className="px-6 py-2.5 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-indigo-700 disabled:opacity-50 transition-colors"
                                 >
-                                    {loading ? 'Dispatching...' : 'Dispatch Letter to Selected'}
+                                    {loading ? msgs.dispatching : msgs.dispatchButton}
                                 </button>
                             </div>
 

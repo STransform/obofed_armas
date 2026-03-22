@@ -58,6 +58,10 @@ async function loadDict(lang: string): Promise<Dict> {
     return pendingRequests[lang];
 }
 
+export function preloadTranslations(lang: string): Promise<Dict> {
+    return loadDict(lang);
+}
+
 export function useTranslation() {
     const lang = (typeof window !== 'undefined'
         ? localStorage.getItem('armas_lang')

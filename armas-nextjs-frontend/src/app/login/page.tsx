@@ -5,6 +5,7 @@ import axiosInstance from '@/lib/axios';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getMessages, type Lang } from '@/lib/messages';
+import { preloadTranslations } from '@/hooks/useTranslation';
 
 export default function Login() {
     const [username, setUsername] = useState('');
@@ -28,7 +29,9 @@ export default function Login() {
 
     useEffect(() => {
         router.prefetch('/dashboard');
-    }, [router]);
+        preloadTranslations(lang);
+        preloadTranslations('en');
+    }, [lang, router]);
 
     const t = getMessages(lang).login;
 
@@ -69,14 +72,13 @@ export default function Login() {
         <>
             <style dangerouslySetInnerHTML={{
                 __html: `
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap');
                 * { box-sizing: border-box; margin: 0; padding: 0; }
 
                 /* ══ ROOT ══ */
                 .login-root {
                     min-height: 100vh;
                     display: flex;
-                    font-family: 'Inter', sans-serif;
+                    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
                     overflow: hidden;
                     position: relative;
                     background: radial-gradient(ellipse at 62% 40%, #0d1f4e 0%, #060d1f 55%, #000510 100%);
@@ -174,7 +176,7 @@ export default function Login() {
                     letter-spacing: 1.5px;
                 }
                 .bureau-line-amh {
-                    font-family: 'Outfit', sans-serif;
+                    font-family: inherit;
                     font-size: 17px;
                     font-weight: 700;
                     color: #f0cc50;
@@ -195,7 +197,7 @@ export default function Login() {
                     text-transform: uppercase;
                 }
                 .bureau-line-en-lg {
-                    font-family: 'Outfit', sans-serif;
+                    font-family: inherit;
                     font-size: 15px;
                     font-weight: 800;
                     color: #ffffff;

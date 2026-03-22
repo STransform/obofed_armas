@@ -7,6 +7,9 @@ import axiosInstance from '@/lib/axios';
 import { Bell, LogOut, UserCircle } from 'lucide-react';
 import { getMessages, type Lang } from '@/lib/messages';
 
+const NOTIFICATIONS_CACHE_KEY = 'armas_notifications_cache';
+const NOTIFICATIONS_CACHE_TTL_MS = 30 * 1000;
+
 function timeAgo(dateStr: string): string {
     const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
     if (diff < 60) return `${diff}s ago`;
@@ -55,6 +58,26 @@ export function Header() {
     const isUser = userRole === 'USER';
     const isManager = userRole === 'MANAGER';
 
+    useEffect(() => {
+        try {
+            const raw = sessionStorage.getItem(NOTIFICATIONS_CACHE_KEY);
+            if (!raw) return;
+
+            const cached = JSON.parse(raw) as {
+                timestamp: number;
+                notifications: Notification[];
+                unreadCount: number;
+            };
+
+            if ((Date.now() - cached.timestamp) > NOTIFICATIONS_CACHE_TTL_MS) return;
+
+            setNotifications(Array.isArray(cached.notifications) ? cached.notifications : []);
+            setUnreadCount(typeof cached.unreadCount === 'number' ? cached.unreadCount : 0);
+        } catch {
+            // Ignore corrupted cache and continue with a fresh fetch.
+        }
+    }, []);
+
     const fetchNotifications = useCallback(async () => {
         try {
             const res = await axiosInstance.get('/transactions/notifications');
@@ -64,6 +87,15 @@ export function Header() {
             );
             setNotifications(unread);
             setUnreadCount(unread.length);
+            try {
+                sessionStorage.setItem(NOTIFICATIONS_CACHE_KEY, JSON.stringify({
+                    timestamp: Date.now(),
+                    notifications: unread,
+                    unreadCount: unread.length,
+                }));
+            } catch {
+                // Ignore storage failures.
+            }
         } catch {
             // silently fail — don't disrupt the UI
         }
@@ -71,7 +103,7 @@ export function Header() {
 
     useEffect(() => {
         fetchNotifications();
-        const interval = setInterval(fetchNotifications, 30000);
+        const interval = setInterval(fetchNotifications, 120000); // poll every 2 minutes
         return () => clearInterval(interval);
     }, [fetchNotifications]);
 

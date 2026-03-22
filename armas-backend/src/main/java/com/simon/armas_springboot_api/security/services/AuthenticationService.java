@@ -22,11 +22,11 @@ public class AuthenticationService {
         this.userRepository = userRepository;
     }
 
-    public boolean authenticate(String username, String password) {
+    public User authenticate(String username, String password) {
         log.info("Authenticating user: {}", username);
         if (username == null || password == null) {
             log.warn("Username or password is null");
-            return false;
+            return null;
         }
 
         User user = userRepository.findByUsername(username);
@@ -39,13 +39,13 @@ public class AuthenticationService {
             boolean passwordMatches = bCryptPasswordEncoder.matches(password, user.getPassword());
             if (!passwordMatches) {
                 log.warn("Invalid password for user: {}", username);
-                return false;
+                return null;
             }
             log.info("Authentication successful for user: {}", username);
-            return true;
+            return user;
         } catch (IllegalArgumentException e) {
             log.warn("Invalid password hash for user: {}. Treating as authentication failure.", username, e);
-            return false; // Treat invalid hash as failed authentication
+            return null; // Treat invalid hash as failed authentication
         }
     }
 }

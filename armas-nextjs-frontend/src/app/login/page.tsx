@@ -26,6 +26,10 @@ export default function Login() {
         return () => window.removeEventListener('storage', handler);
     }, []);
 
+    useEffect(() => {
+        router.prefetch('/dashboard');
+    }, [router]);
+
     const t = getMessages(lang).login;
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -37,6 +41,21 @@ export default function Login() {
             const token = response.data.token;
             const role = response.data.roles && response.data.roles.length > 0
                 ? response.data.roles[0] : 'USER';
+            if (role === 'ADMIN') {
+                [
+                    '/dashboard',
+                    '/buttons/organizations',
+                    '/buttons/directorates',
+                    '/buttons/documents',
+                    '/buttons/budgetyear',
+                    '/buttons/users',
+                    '/buttons/roles',
+                    '/buttons/assign',
+                    '/buttons/assign-privileges',
+                    '/buttons/translations',
+                    '/transactions/advanced-filters',
+                ].forEach((href) => router.prefetch(href));
+            }
             login(token, role);
             router.push('/dashboard');
         } catch (err: any) {

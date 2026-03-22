@@ -152,7 +152,6 @@ export default function HomePage() {
                         </DropdownMenu.Root>
 
                         <Link href="/login"
-                            prefetch={false}
                             className="flex items-center gap-2 px-5 py-2 bg-[#003580] hover:bg-[#0057c2] text-white rounded-xl text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95">
                             {t.navLogin}
                         </Link>

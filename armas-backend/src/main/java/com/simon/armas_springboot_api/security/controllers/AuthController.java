@@ -53,18 +53,11 @@ public class AuthController {
                         .body(Map.of("error", "Username and password are required"));
             }
 
-            boolean isAuthenticated = authenticationService.authenticate(loginRequest.getUsername(), loginRequest.getPassword());
-            if (!isAuthenticated) {
+            User user = authenticationService.authenticate(loginRequest.getUsername(), loginRequest.getPassword());
+            if (user == null) {
                 log.warn("Authentication failed for username: {}", loginRequest.getUsername());
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Invalid username or password"));
-            }
-
-            User user = userService.getUserByUsername(loginRequest.getUsername());
-            if (user == null) {
-                log.error("User not found after authentication: {}", loginRequest.getUsername());
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Map.of("error", "User not found after authentication"));
             }
 
             UserPrincipal principal = new UserPrincipal(userPrivilegeAssignmentService, user);

@@ -106,7 +106,7 @@ export default function UsersPage() {
         }
 
         try {
-            const payload = {
+            const basePayload = {
                 firstName: currentUser.firstName.trim(),
                 lastName: currentUser.lastName.trim(),
                 username: currentUser.username.trim(),
@@ -120,14 +120,22 @@ export default function UsersPage() {
             };
 
             if (formMode === 'new') {
-                const res = await axiosInstance.post('/users', payload);
+                const res = await axiosInstance.post('/users', basePayload);
                 const fullUser = await axiosInstance.get(`/users/${res.data.id}`);
                 setUsers([...users, fullUser.data]);
             } else {
-                const editPayload = { ...payload, id: currentUser.id, organization: payload.organizationId ? { id: payload.organizationId } : null, directorate: payload.directorateId ? { id: payload.directorateId } : null };
-                delete editPayload.organizationId;
-                delete editPayload.directorateId;
-                delete editPayload.role;
+                const editPayload = {
+                    id: currentUser.id,
+                    firstName: basePayload.firstName,
+                    lastName: basePayload.lastName,
+                    username: basePayload.username,
+                    organization: basePayload.organizationId ? { id: basePayload.organizationId } : null,
+                    directorate: basePayload.directorateId ? { id: basePayload.directorateId } : null,
+                    ...(currentUser.password ? {
+                        password: currentUser.password.trim(),
+                        confirmPassword: currentUser.confirmPassword.trim()
+                    } : {})
+                };
                 await axiosInstance.put(`/users/${currentUser.id}`, editPayload);
                 const updatedUser = await axiosInstance.get(`/users/${currentUser.id}`);
                 setUsers(users.map(u => u.id === currentUser.id ? updatedUser.data : u));

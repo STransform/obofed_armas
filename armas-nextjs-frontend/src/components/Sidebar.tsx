@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import {
@@ -24,6 +24,7 @@ const roleColors: Record<string, { bg: string; text: string }> = {
 export function Sidebar() {
     const { userRole } = useAuth();
     const pathname = usePathname();
+    const router = useRouter();
 
     const [lang, setLang] = useState<Lang>('en');
     useEffect(() => {
@@ -98,6 +99,59 @@ export function Sidebar() {
         { name: it.advancedFilters, href: '/transactions/advanced-filters', icon: Filter }
     ] : [];
 
+    useEffect(() => {
+        const hrefs = ['/dashboard'];
+
+        if (isUser) hrefs.push('/buttons/file-upload', '/buttons/letter-download', '/file-history');
+        if (isManager) hrefs.push('/transactions/letters');
+        if (isAdmin) {
+            hrefs.push(
+                '/buttons/organizations',
+                '/buttons/directorates',
+                '/buttons/documents',
+                '/buttons/budgetyear',
+                '/buttons/users',
+                '/buttons/roles',
+                '/buttons/assign',
+                '/buttons/assign-privileges',
+                '/buttons/translations',
+                '/transactions/advanced-filters'
+            );
+        }
+        if (isArchiver) {
+            hrefs.push(
+                '/buttons/file-download',
+                '/transactions/approved-reports',
+                '/transactions/pending-reports',
+                '/transactions/advanced-filters'
+            );
+        }
+        if (isSeniorAuditor || isApprover) {
+            hrefs.push(
+                '/transactions/auditor-tasks',
+                '/transactions/rejected-reports',
+                '/transactions/approved-reports',
+                '/transactions/under-review-reports',
+                '/transactions/corrected-reports',
+                '/transactions/advanced-filters'
+            );
+        }
+        if (isApprover) hrefs.push('/transactions/upload-to-organizations');
+
+        const uniqueHrefs = Array.from(new Set(hrefs));
+        const prefetchRoutes = () => {
+            uniqueHrefs.forEach((href) => router.prefetch(href));
+        };
+
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+            const idleId = window.requestIdleCallback(prefetchRoutes, { timeout: 1500 });
+            return () => window.cancelIdleCallback(idleId);
+        }
+
+        const timeoutId = globalThis.setTimeout(prefetchRoutes, 300);
+        return () => globalThis.clearTimeout(timeoutId);
+    }, [isAdmin, isApprover, isArchiver, isManager, isSeniorAuditor, isUser, router]);
+
     const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
     const roleInfo = roleColors[userRole || ''] || { bg: 'bg-slate-500/20', text: 'text-slate-300' };
@@ -118,7 +172,6 @@ export function Sidebar() {
                             <li key={item.href}>
                                 <Link
                                     href={item.href}
-                                    prefetch={false}
                                     className={`group flex items-center justify-between px-4 py-2.5 rounded-lg mx-2 text-sm font-medium transition-all duration-150 ${active
                                         ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40'
                                         : 'text-slate-400 hover:bg-slate-700/60 hover:text-slate-100'

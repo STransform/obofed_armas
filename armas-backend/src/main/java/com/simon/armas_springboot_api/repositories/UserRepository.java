@@ -10,10 +10,24 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     // Updated query to fetch roles, organization, and directorate
-    @Query("SELECT u FROM User u JOIN FETCH u.organization o LEFT JOIN FETCH u.directorate d JOIN FETCH u.roles r WHERE u.username = :username")
+    @Query("""
+            SELECT DISTINCT u
+            FROM User u
+            LEFT JOIN FETCH u.organization
+            LEFT JOIN FETCH u.directorate
+            LEFT JOIN FETCH u.roles r
+            LEFT JOIN FETCH r.privileges
+            WHERE u.username = :username
+            """)
     User findByUsername(@Param("username") String username);
 
-    @Query("SELECT u FROM User u JOIN FETCH u.organization JOIN FETCH u.directorate")
+    @Query("""
+            SELECT DISTINCT u
+            FROM User u
+            LEFT JOIN FETCH u.organization
+            LEFT JOIN FETCH u.directorate
+            LEFT JOIN FETCH u.roles
+            """)
     List<User> findAllWithOrganizationsAndDirectorates();
 
     @Query("SELECT u FROM User u JOIN FETCH u.roles")
@@ -25,7 +39,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u JOIN u.roles r WHERE r.description = :roleName AND u.organization.id = :organizationId")
     List<User> findByRoleNameAndOrganizationId(@Param("roleName") String roleName, @Param("organizationId") String organizationId);
 
-    @Query("SELECT u FROM User u JOIN FETCH u.organization JOIN FETCH u.directorate WHERE u.id = :id")
+    @Query("""
+            SELECT DISTINCT u
+            FROM User u
+            LEFT JOIN FETCH u.organization
+            LEFT JOIN FETCH u.directorate
+            LEFT JOIN FETCH u.roles r
+            LEFT JOIN FETCH r.privileges
+            WHERE u.id = :id
+            """)
     Optional<User> findByIdWithRelations(@Param("id") Long id);
 
     @Query("SELECT u FROM User u WHERE u.organization.id = :organizationId")

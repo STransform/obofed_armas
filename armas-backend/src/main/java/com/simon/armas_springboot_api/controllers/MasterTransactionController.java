@@ -14,6 +14,7 @@ import com.simon.armas_springboot_api.services.MasterTransactionService;
 import com.simon.armas_springboot_api.services.UserService;
 import com.simon.armas_springboot_api.clients.TranslationServiceClient;
 import com.simon.armas_springboot_api.dto.UserDTO;
+import com.simon.armas_springboot_api.dto.NotificationDTO;
 import com.simon.armas_springboot_api.models.User;
 import com.simon.armas_springboot_api.models.Organization;
 import com.simon.armas_springboot_api.repositories.OrganizationRepository;
@@ -39,6 +40,7 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -57,6 +59,12 @@ import java.nio.file.Path;
 @RestController
 @RequestMapping("/transactions")
 public class MasterTransactionController {
+
+    // --- Simple translation cache (5-minute TTL) ---
+    private final Map<String, Map<String, String>> translationCache = new ConcurrentHashMap<>();
+    private final Map<String, Long> translationCacheTs = new ConcurrentHashMap<>();
+    private static final long TRANSLATION_CACHE_TTL_MS = 5 * 60 * 1000L; // 5 minutes
+
     @Autowired
     private DocumentRepository documentRepository;
 
@@ -103,6 +111,13 @@ public class MasterTransactionController {
     @GetMapping("/translations")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, String>> getTranslations(@RequestParam(defaultValue = "en") String lang) {
+        // Return cached result if still fresh
+        Long cacheTs = translationCacheTs.get(lang);
+        if (cacheTs != null && (System.currentTimeMillis() - cacheTs) < TRANSLATION_CACHE_TTL_MS) {
+            Map<String, String> cached = translationCache.get(lang);
+            if (cached != null) return ResponseEntity.ok(cached);
+        }
+
         Map<String, String> finalTranslations = new HashMap<>();
 
         try {
@@ -131,6 +146,10 @@ public class MasterTransactionController {
         } catch (Exception e) {
             System.err.println("Warning: Could not load dynamic translations for " + lang);
         }
+
+        // Cache the result
+        translationCache.put(lang, finalTranslations);
+        translationCacheTs.put(lang, System.currentTimeMillis());
 
         return ResponseEntity.ok(finalTranslations);
     }
@@ -217,20 +236,30 @@ public class MasterTransactionController {
 
     @GetMapping("/notifications")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<Notification>> getUnreadNotifications(Principal principal) {
+    public ResponseEntity<List<NotificationDTO>> getUnreadNotifications(Principal principal) {
         User user = userRepository.findByUsername(principal.getName());
         if (user == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList());
         }
-        List<Notification> notifications = notificationRepository.findByUserIdAndIsReadFalse(user.getId());
-        return ResponseEntity.ok(notifications);
+        List<NotificationDTO> dtos = notificationRepository.findByUserIdAndIsReadFalse(user.getId())
+                .stream()
+                .map(n -> new NotificationDTO(
+                        n.getId(), n.getTitle(), n.getMessage(), n.isRead(),
+                        n.getCreatedAt(), n.getEntityType(), n.getEntityId(), n.getContext()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 
     @PutMapping("/notifications/{id}/read")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> markAsRead(@PathVariable Long id, Principal principal) {
         Notification notification = notificationRepository.findById(id).orElse(null);
-        if (notification == null || !notification.getUser().getUsername().equals(principal.getName())) {
+        if (notification == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        // Security check: verify the notification belongs to the requesting user
+        User reqUser = userRepository.findByUsername(principal.getName());
+        if (reqUser == null || !notification.getUser().getId().equals(reqUser.getId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         notification.setIsRead(true);

@@ -17,7 +17,8 @@ public class NotificationDTO {
     private Long entityId;
     private String context;
 
-    public NotificationDTO() {}
+    public NotificationDTO() {
+    }
 
     public NotificationDTO(
             Long id, String title, String message, boolean isRead,
@@ -32,27 +33,67 @@ public class NotificationDTO {
         this.context = context;
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
+    public String getTitle() {
+        return title;
+    }
 
-    public boolean isRead() { return isRead; }
-    public void setIsRead(boolean isRead) { this.isRead = isRead; }
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public String getMessage() {
+        return message;
+    }
 
-    public String getEntityType() { return entityType; }
-    public void setEntityType(String entityType) { this.entityType = entityType; }
+    public void setMessage(String message) {
+        this.message = message;
+    }
 
-    public Long getEntityId() { return entityId; }
-    public void setEntityId(Long entityId) { this.entityId = entityId; }
+    public boolean isRead() {
+        return isRead;
+    }
 
-    public String getContext() { return context; }
-    public void setContext(String context) { this.context = context; }
+    public void setIsRead(boolean isRead) {
+        this.isRead = isRead;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getEntityType() {
+        return entityType;
+    }
+
+    public void setEntityType(String entityType) {
+        this.entityType = entityType;
+    }
+
+    public Long getEntityId() {
+        return entityId;
+    }
+
+    public void setEntityId(Long entityId) {
+        this.entityId = entityId;
+    }
+
+    public String getContext() {
+        return context;
+    }
+
+    public void setContext(String context) {
+        this.context = context;
+    }
 }

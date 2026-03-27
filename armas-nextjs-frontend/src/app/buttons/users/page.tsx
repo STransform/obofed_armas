@@ -215,7 +215,7 @@ export default function UsersPage() {
                         </div>
                         <button
                             onClick={handleOpenAdd}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 flex items-center rounded-md font-medium transition shadow-sm"
+                            className="bg-[linear-gradient(135deg,#065f46_0%,#0f766e_100%)] hover:bg-[linear-gradient(135deg,#047857_0%,#0f766e_100%)] text-white px-4 py-2 flex items-center rounded-md font-medium transition shadow-sm"
                         >
                             <Plus className="w-4 h-4 mr-2" /> Add User
                         </button>

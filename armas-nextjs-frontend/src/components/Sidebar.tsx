@@ -198,7 +198,7 @@ export function Sidebar() {
     };
 
     return (
-        <aside className="flex h-screen w-[320px] flex-col overflow-hidden border-r border-[var(--line-soft)] bg-[linear-gradient(180deg,#f8fffc_0%,#f3faf6_46%,#edf7f1_100%)] shadow-[18px_0_48px_rgba(15,23,42,0.06)]">
+        <aside data-armas-shell="true" className="flex h-screen w-[320px] flex-col overflow-hidden border-r border-[var(--line-soft)] bg-[linear-gradient(180deg,#f8fffc_0%,#f3faf6_46%,#edf7f1_100%)] shadow-[18px_0_48px_rgba(15,23,42,0.06)]">
             <div className="border-b border-[var(--line-soft)] px-5 py-5">
                 <div className="flex items-center gap-4">
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#064e3b_0%,#0f766e_100%)] shadow-[0_18px_30px_rgba(6,95,70,0.2)]">

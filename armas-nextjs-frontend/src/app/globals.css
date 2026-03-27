@@ -50,3 +50,99 @@ body {
   background: rgba(16, 185, 129, 0.2);
   color: var(--ink-900);
 }
+
+body:has([data-armas-shell="true"]) main {
+  color: var(--ink-800);
+}
+
+body:has([data-armas-shell="true"]) main h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: -0.02em;
+}
+
+body:has([data-armas-shell="true"]) main h2,
+body:has([data-armas-shell="true"]) main h3 {
+  color: var(--ink-900);
+}
+
+body:has([data-armas-shell="true"]) main p,
+body:has([data-armas-shell="true"]) main span,
+body:has([data-armas-shell="true"]) main label,
+body:has([data-armas-shell="true"]) main td,
+body:has([data-armas-shell="true"]) main th,
+body:has([data-armas-shell="true"]) main li {
+  font-size: 0.98rem;
+}
+
+body:has([data-armas-shell="true"]) main input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+body:has([data-armas-shell="true"]) main select,
+body:has([data-armas-shell="true"]) main textarea {
+  min-height: 3rem;
+  border-radius: 1rem;
+  border-color: rgba(15, 23, 42, 0.12);
+  background: #fbfefd;
+  color: var(--ink-800);
+  font-size: 0.98rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+body:has([data-armas-shell="true"]) main input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+body:has([data-armas-shell="true"]) main select:focus,
+body:has([data-armas-shell="true"]) main textarea:focus {
+  border-color: var(--brand-400);
+  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.14);
+  outline: none;
+}
+
+body:has([data-armas-shell="true"]) main table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+body:has([data-armas-shell="true"]) main thead th {
+  background: linear-gradient(180deg, #f8fffc 0%, #f2f8f4 100%);
+  color: var(--ink-500);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+body:has([data-armas-shell="true"]) main tbody td {
+  color: var(--ink-700);
+  font-size: 0.98rem;
+}
+
+body:has([data-armas-shell="true"]) main tbody tr:hover td {
+  background: rgba(236, 253, 245, 0.75);
+}
+
+body:has([data-armas-shell="true"]) [role="dialog"],
+body:has([data-armas-shell="true"]) .fixed.translate-x-\\[-50\\%\\].translate-y-\\[-50\\%\\] {
+  border-radius: 1.5rem;
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.18);
+}
+
+body:has([data-armas-shell="true"]) .fixed.translate-x-\\[-50\\%\\].translate-y-\\[-50\\%\\] label {
+  color: var(--ink-700);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+body:has([data-armas-shell="true"]) main button[class*="bg-indigo-600"],
+body:has([data-armas-shell="true"]) main a[class*="bg-indigo-600"],
+body:has([data-armas-shell="true"]) .fixed.translate-x-\\[-50\\%\\].translate-y-\\[-50\\%\\] button[class*="bg-indigo-600"] {
+  background-color: #065f46 !important;
+  background-image: linear-gradient(135deg, #065f46 0%, #0f766e 100%) !important;
+  border-color: #065f46 !important;
+  color: #ffffff !important;
+  box-shadow: 0 16px 30px rgba(6, 95, 70, 0.18);
+}
+
+body:has([data-armas-shell="true"]) main button[class*="bg-indigo-600"]:hover,
+body:has([data-armas-shell="true"]) main a[class*="bg-indigo-600"]:hover,
+body:has([data-armas-shell="true"]) .fixed.translate-x-\\[-50\\%\\].translate-y-\\[-50\\%\\] button[class*="bg-indigo-600"]:hover {
+  background-color: #047857 !important;
+  background-image: linear-gradient(135deg, #047857 0%, #0f766e 100%) !important;
+}

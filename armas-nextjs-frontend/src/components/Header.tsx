@@ -4,13 +4,19 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import axiosInstance from '@/lib/axios';
-import { Bell, LogOut, UserCircle, Building2, ShieldCheck } from 'lucide-react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { Bell, LogOut, UserCircle, Building2, ShieldCheck, Globe, ChevronDown } from 'lucide-react';
 import { getMessages, type Lang } from '@/lib/messages';
 import { useTranslation } from '@/hooks/useTranslation';
 
 const NOTIFICATIONS_CACHE_KEY = 'armas_notifications_cache';
 const NOTIFICATIONS_CACHE_TTL_MS = 30 * 1000;
 const CURRENT_USER_CACHE_KEY = 'armas_current_user_cache';
+const LANGS = [
+    { code: 'en' as Lang, label: 'English', flag: 'EN' },
+    { code: 'am' as Lang, label: 'Amharic', flag: 'AM' },
+    { code: 'om' as Lang, label: 'Afaan Oromoo', flag: 'OM' },
+];
 
 function timeAgo(dateStr: string): string {
     const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
@@ -85,6 +91,7 @@ export function Header() {
     }, []);
 
     const msgs = getMessages(lang).header;
+    const currentLang = LANGS.find(item => item.code === lang) || LANGS[0];
 
     const isArchiver = userRole === 'ARCHIVER';
     const isSeniorAuditor = userRole === 'SENIOR_AUDITOR';
@@ -222,6 +229,11 @@ export function Header() {
 
     const usernameLabel = currentUser?.username || (msgs.roles[userRole as keyof typeof msgs.roles] || userRole);
     const orgLabel = currentUser?.orgname ? resolve(currentUser.orgname) || currentUser.orgname : null;
+    const pickLanguage = (code: Lang) => {
+        setLang(code);
+        localStorage.setItem('armas_lang', code);
+        window.dispatchEvent(new Event('storage'));
+    };
 
     return (
         <header className="sticky top-0 z-10 border-b border-[var(--line-soft)] bg-white/88 backdrop-blur-xl">
@@ -251,6 +263,35 @@ export function Header() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    <DropdownMenu.Root>
+                        <DropdownMenu.Trigger className="hidden items-center gap-2 rounded-2xl border border-[var(--line-soft)] bg-white px-4 py-3 text-sm font-bold text-[var(--ink-700)] shadow-[0_10px_18px_rgba(15,23,42,0.04)] transition hover:border-[var(--brand-300)] hover:text-[var(--brand-800)] lg:flex">
+                            <Globe className="h-4 w-4" />
+                            <span>{currentLang.flag}</span>
+                            <span>{currentLang.label}</span>
+                            <ChevronDown className="h-4 w-4 text-[var(--ink-400)]" />
+                        </DropdownMenu.Trigger>
+                        <DropdownMenu.Portal>
+                            <DropdownMenu.Content
+                                align="end"
+                                sideOffset={8}
+                                className="min-w-[180px] rounded-2xl border border-[var(--line-soft)] bg-white p-2 shadow-2xl"
+                            >
+                                {LANGS.map(item => (
+                                    <DropdownMenu.Item
+                                        key={item.code}
+                                        onClick={() => pickLanguage(item.code)}
+                                        className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-3 text-sm outline-none transition ${lang === item.code ? 'bg-[var(--brand-50)] font-bold text-[var(--brand-800)]' : 'text-[var(--ink-700)] hover:bg-[var(--surface-2)]'}`}
+                                    >
+                                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--surface-2)] text-xs font-black">
+                                            {item.flag}
+                                        </span>
+                                        {item.label}
+                                    </DropdownMenu.Item>
+                                ))}
+                            </DropdownMenu.Content>
+                        </DropdownMenu.Portal>
+                    </DropdownMenu.Root>
+
                     <div className="relative" ref={dropdownRef}>
                         <button
                             onClick={() => setIsOpen(prev => !prev)}

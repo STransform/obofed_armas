@@ -8,11 +8,15 @@ import axiosInstance from '@/lib/axios';
 import { Search, Plus } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { SimplePagination } from '@/components/SimplePagination';
+import { getMessages, type Lang } from '@/lib/messages';
 
 const PAGE_SIZE = 5;
 
 export default function AssignRolePage() {
     const { isAuthenticated } = useAuth();
+    const [lang, setLang] = useState<Lang>('en');
+    const msgs = getMessages(lang);
+    const pageMsgs = msgs.assignRolesPage;
 
     const [users, setUsers] = useState<any[]>([]);
     const [roles, setRoles] = useState<any[]>([]);
@@ -26,6 +30,19 @@ export default function AssignRolePage() {
 
     const [selectedUser, setSelectedUser] = useState<any>(null);
     const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const syncLang = () => {
+            const next = (localStorage.getItem('armas_lang') as Lang) || 'en';
+            setLang(next);
+        };
+
+        syncLang();
+        window.addEventListener('storage', syncLang);
+        return () => window.removeEventListener('storage', syncLang);
+    }, []);
 
     useEffect(() => {
         if (!isAuthenticated) return;
@@ -44,10 +61,10 @@ export default function AssignRolePage() {
             setRoles(Array.isArray(rolesRes.data) ? rolesRes.data : []);
 
             if (validUsers.length === 0) {
-                setError('No valid users found.');
+                setError(pageMsgs.noValidUsers);
             }
         } catch (err: any) {
-            setError(err.response?.data?.message || err.response?.data || 'Failed to fetch data');
+            setError(err.response?.data?.message || err.response?.data || pageMsgs.fetchError);
         } finally {
             setLoading(false);
         }
@@ -68,7 +85,7 @@ export default function AssignRolePage() {
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedUser || selectedRoleIds.length === 0) {
-            alert('Please select at least one role.');
+            alert(pageMsgs.selectAtLeastOneRole);
             return;
         }
 
@@ -79,7 +96,7 @@ export default function AssignRolePage() {
             setUsers(users.map(u => u.id === res.data.id ? res.data : u));
             setIsAssignOpen(false);
         } catch (err: any) {
-            alert(err.response?.data?.message || err.response?.data || 'Error assigning roles');
+            alert(err.response?.data?.message || err.response?.data || pageMsgs.saveError);
         }
     };
 
@@ -110,8 +127,8 @@ export default function AssignRolePage() {
                 <main className="flex-1 overflow-y-auto p-8 max-w-7xl w-full mx-auto">
                     <div className="flex justify-between items-end mb-6">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900">Assign Roles</h1>
-                            <p className="text-sm text-gray-500 mt-1">Assign system permissions to active users.</p>
+                            <h1 className="text-3xl font-bold text-gray-900">{pageMsgs.title}</h1>
+                            <p className="text-sm text-gray-500 mt-1">{pageMsgs.subtitle}</p>
                         </div>
                     </div>
 
@@ -123,43 +140,43 @@ export default function AssignRolePage() {
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
                                     type="text"
-                                    placeholder="Search by username or role..."
+                                    placeholder={pageMsgs.searchPlaceholder}
                                     className="w-full pl-9 pr-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                     value={filterText}
                                     onChange={e => setFilterText(e.target.value)}
                                 />
                             </div>
-                            <span className="text-sm text-gray-500 font-medium">Total: {filtered.length} users</span>
+                            <span className="text-sm text-gray-500 font-medium">{msgs.table.total}: {filtered.length} {pageMsgs.itemLabel}</span>
                         </div>
 
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Roles</th>
-                                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{msgs.table.colNum}</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{msgs.usersPage.username}</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{pageMsgs.currentRoles}</th>
+                                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{msgs.table.colAction}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {loading ? (
-                                        <tr><td colSpan={4} className="px-6 py-12 text-center text-gray-500">Loading records...</td></tr>
+                                        <tr><td colSpan={4} className="px-6 py-12 text-center text-gray-500">{msgs.table.loading}</td></tr>
                                     ) : filtered.length === 0 ? (
-                                        <tr><td colSpan={4} className="px-6 py-12 text-center text-gray-500">No users found.</td></tr>
+                                        <tr><td colSpan={4} className="px-6 py-12 text-center text-gray-500">{msgs.usersPage.empty}</td></tr>
                                     ) : (
                                         paginated.map((u, idx) => (
                                             <tr key={u.id} className="hover:bg-gray-50 transition-colors">
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{((currentPage - 1) * PAGE_SIZE) + idx + 1}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{u.username || 'N/A'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{u.username || pageMsgs.none}</td>
                                                 <td className="px-6 py-4 text-sm text-gray-500 flex flex-wrap gap-1">
                                                     {u.roles && u.roles.length > 0
                                                         ? u.roles.map((r: any) => <span key={r.id} className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-xs border border-indigo-100">{r.description}</span>)
-                                                        : <span className="text-gray-400 italic">None</span>}
+                                                        : <span className="text-gray-400 italic">{pageMsgs.none}</span>}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <button onClick={() => handleOpenAssign(u)} className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
-                                                        <Plus className="w-3 h-3 mr-1" /> Assign Role
+                                                    <button onClick={() => handleOpenAssign(u)} className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-[linear-gradient(135deg,#065f46_0%,#0f766e_100%)] hover:bg-[linear-gradient(135deg,#047857_0%,#0f766e_100%)]">
+                                                        <Plus className="w-3 h-3 mr-1" /> {pageMsgs.assignRole}
                                                     </button>
                                                 </td>
                                             </tr>
@@ -173,7 +190,7 @@ export default function AssignRolePage() {
                             totalItems={filtered.length}
                             pageSize={PAGE_SIZE}
                             onPageChange={setCurrentPage}
-                            itemLabel="users"
+                            itemLabel={pageMsgs.itemLabel}
                         />
                     </div>
                 </main>
@@ -185,7 +202,7 @@ export default function AssignRolePage() {
                     <Dialog.Overlay className="fixed inset-0 bg-black/40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
                     <Dialog.Content className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-md translate-x-[-50%] translate-y-[-50%] gap-4 border bg-white p-6 shadow-lg duration-200 sm:rounded-lg">
                         <Dialog.Title className="text-lg font-semibold leading-none tracking-tight">
-                            Assign Role(s) to @{selectedUser?.username}
+                            {pageMsgs.assignTitle} @{selectedUser?.username}
                         </Dialog.Title>
                         <form onSubmit={handleSave} className="grid gap-4 py-4">
                             <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
@@ -205,12 +222,12 @@ export default function AssignRolePage() {
                                         </div>
                                     ))
                                 ) : (
-                                    <p className="text-sm text-gray-500">No roles available.</p>
+                                    <p className="text-sm text-gray-500">{pageMsgs.noRoles}</p>
                                 )}
                             </div>
                             <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
-                                <button type="button" onClick={() => setIsAssignOpen(false)} className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-gray-50">Cancel</button>
-                                <button type="submit" disabled={selectedRoleIds.length === 0} className="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed">Assign Selected</button>
+                                <button type="button" onClick={() => setIsAssignOpen(false)} className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-gray-50">{msgs.table.btnCancel}</button>
+                                <button type="submit" disabled={selectedRoleIds.length === 0} className="px-4 py-2 bg-[linear-gradient(135deg,#065f46_0%,#0f766e_100%)] text-white rounded-md text-sm font-medium hover:bg-[linear-gradient(135deg,#047857_0%,#0f766e_100%)] disabled:opacity-50 disabled:cursor-not-allowed">{pageMsgs.assignSelected}</button>
                             </div>
                         </form>
                     </Dialog.Content>

@@ -98,7 +98,34 @@ export default function Login() {
                     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
                     overflow: hidden;
                     position: relative;
-                    background: radial-gradient(ellipse at 62% 40%, #0d1f4e 0%, #060d1f 55%, #000510 100%);
+                    background:
+                        radial-gradient(circle at 12% 18%, rgba(52, 211, 153, 0.22) 0%, transparent 26%),
+                        radial-gradient(circle at 88% 14%, rgba(251, 191, 36, 0.14) 0%, transparent 22%),
+                        linear-gradient(135deg, #042f2e 0%, #064e3b 38%, #0f766e 100%);
+                }
+
+                .login-root::before {
+                    content: '';
+                    position: absolute;
+                    inset: 0;
+                    pointer-events: none;
+                    opacity: 0.12;
+                    background-image:
+                        linear-gradient(rgba(255,255,255,0.22) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.14) 1px, transparent 1px);
+                    background-size: 96px 96px;
+                }
+
+                .login-root::after {
+                    content: '';
+                    position: absolute;
+                    inset: auto auto -120px -90px;
+                    width: 320px;
+                    height: 320px;
+                    border-radius: 999px;
+                    background: rgba(255, 255, 255, 0.06);
+                    filter: blur(18px);
+                    pointer-events: none;
                 }
 
                 /* ═════════════════════════════════
@@ -109,7 +136,9 @@ export default function Login() {
                     left: 0; top: 0; bottom: 0;
                     width: 360px;
                     z-index: 5;
-                    background: radial-gradient(ellipse at 40% 35%, #003a85 0%, #001a50 45%, #000a28 100%);
+                    background:
+                        linear-gradient(180deg, rgba(2, 44, 34, 0.96) 0%, rgba(4, 78, 59, 0.92) 55%, rgba(6, 95, 70, 0.88) 100%);
+                    border-right: 1px solid rgba(255, 255, 255, 0.08);
                     display: flex;
                     flex-direction: column;
                     align-items: center;
@@ -142,7 +171,7 @@ export default function Login() {
                     position: absolute;
                     width: 320px; height: 320px;
                     border-radius: 50%;
-                    background: radial-gradient(circle, rgba(196,152,40,0.08) 0%, transparent 70%);
+                    background: radial-gradient(circle, rgba(251,191,36,0.14) 0%, rgba(16,185,129,0.08) 42%, transparent 72%);
                     top: 50%; left: 50%;
                     transform: translate(-50%, -55%);
                     pointer-events: none;
@@ -189,27 +218,27 @@ export default function Login() {
                 .bureau-line-small {
                     font-size: 11px;
                     font-weight: 500;
-                    color: rgba(160,200,255,0.6);
+                    color: rgba(209, 250, 229, 0.72);
                     letter-spacing: 1.5px;
                 }
                 .bureau-line-amh {
                     font-family: inherit;
                     font-size: 17px;
                     font-weight: 700;
-                    color: #f0cc50;
+                    color: #fde68a;
                     letter-spacing: 0.5px;
                     margin-top: 2px;
                 }
                 .gold-bar {
                     width: 52px; height: 2px;
-                    background: linear-gradient(90deg, transparent, #c49828, transparent);
+                    background: linear-gradient(90deg, transparent, #fbbf24, transparent);
                     border-radius: 1px;
                     margin: 8px auto;
                 }
                 .bureau-line-en-sm {
                     font-size: 10px;
                     font-weight: 600;
-                    color: rgba(160,200,255,0.5);
+                    color: rgba(220, 252, 231, 0.6);
                     letter-spacing: 2.5px;
                     text-transform: uppercase;
                 }
@@ -236,20 +265,20 @@ export default function Login() {
                     display: inline-flex;
                     align-items: center;
                     gap: 6px;
-                    background: rgba(255,255,255,0.05);
-                    border: 1px solid rgba(196,152,40,0.25);
+                    background: rgba(255,255,255,0.08);
+                    border: 1px solid rgba(251,191,36,0.28);
                     border-radius: 20px;
                     padding: 4px 14px;
                 }
                 .armas-badge span {
                     font-size: 13px;
                     font-weight: 800;
-                    color: #f0cc50;
+                    color: #fde68a;
                     letter-spacing: 3px;
                 }
                 .armas-badge-sub {
                     font-size: 10px;
-                    color: rgba(100,140,200,0.4);
+                    color: rgba(220, 252, 231, 0.42);
                     letter-spacing: 0.5px;
                 }
 
@@ -271,22 +300,23 @@ export default function Login() {
                     position: absolute; inset: 0;
                     pointer-events: none;
                     background-image:
-                        radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.8) 0%, transparent 100%),
-                        radial-gradient(1px 1px at 25% 35%, rgba(255,255,255,0.6) 0%, transparent 100%),
-                        radial-gradient(1.5px 1.5px at 40% 5%, rgba(255,255,255,0.9) 0%, transparent 100%),
-                        radial-gradient(1px 1px at 55% 60%, rgba(255,255,255,0.5) 0%, transparent 100%),
-                        radial-gradient(1.5px 1.5px at 70% 20%, rgba(255,255,255,0.7) 0%, transparent 100%),
-                        radial-gradient(1px 1px at 85% 45%, rgba(255,255,255,0.6) 0%, transparent 100%),
-                        radial-gradient(1px 1px at 13% 70%, rgba(255,255,255,0.5) 0%, transparent 100%),
-                        radial-gradient(2px 2px at 92% 10%, rgba(255,255,255,0.9) 0%, transparent 100%),
-                        radial-gradient(1px 1px at 60% 85%, rgba(255,255,255,0.6) 0%, transparent 100%),
-                        radial-gradient(1px 1px at 32% 90%, rgba(255,255,255,0.7) 0%, transparent 100%),
-                        radial-gradient(1.5px 1.5px at 78% 75%, rgba(255,255,255,0.5) 0%, transparent 100%),
-                        radial-gradient(1px 1px at 48% 48%, rgba(255,255,255,0.4) 0%, transparent 100%),
-                        radial-gradient(1px 1px at 5% 50%,  rgba(255,255,255,0.6) 0%, transparent 100%),
-                        radial-gradient(2px 2px at 20% 55%, rgba(160,200,255,0.6) 0%, transparent 100%),
-                        radial-gradient(1px 1px at 95% 65%, rgba(255,255,255,0.5) 0%, transparent 100%),
-                        radial-gradient(1px 1px at 66% 38%, rgba(255,255,255,0.4) 0%, transparent 100%);
+                        radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.62) 0%, transparent 100%),
+                        radial-gradient(1px 1px at 25% 35%, rgba(255,255,255,0.42) 0%, transparent 100%),
+                        radial-gradient(1.5px 1.5px at 40% 5%, rgba(255,255,255,0.72) 0%, transparent 100%),
+                        radial-gradient(1px 1px at 55% 60%, rgba(255,255,255,0.34) 0%, transparent 100%),
+                        radial-gradient(1.5px 1.5px at 70% 20%, rgba(251,191,36,0.42) 0%, transparent 100%),
+                        radial-gradient(1px 1px at 85% 45%, rgba(255,255,255,0.46) 0%, transparent 100%),
+                        radial-gradient(1px 1px at 13% 70%, rgba(255,255,255,0.34) 0%, transparent 100%),
+                        radial-gradient(2px 2px at 92% 10%, rgba(255,255,255,0.76) 0%, transparent 100%),
+                        radial-gradient(1px 1px at 60% 85%, rgba(255,255,255,0.42) 0%, transparent 100%),
+                        radial-gradient(1px 1px at 32% 90%, rgba(220,252,231,0.44) 0%, transparent 100%),
+                        radial-gradient(1.5px 1.5px at 78% 75%, rgba(255,255,255,0.28) 0%, transparent 100%),
+                        radial-gradient(1px 1px at 48% 48%, rgba(255,255,255,0.24) 0%, transparent 100%),
+                        radial-gradient(1px 1px at 5% 50%,  rgba(255,255,255,0.4) 0%, transparent 100%),
+                        radial-gradient(2px 2px at 20% 55%, rgba(52,211,153,0.45) 0%, transparent 100%),
+                        radial-gradient(1px 1px at 95% 65%, rgba(255,255,255,0.3) 0%, transparent 100%),
+                        radial-gradient(1px 1px at 66% 38%, rgba(255,255,255,0.24) 0%, transparent 100%);
+                    opacity: 0.9;
                 }
 
                 /* ── GLOBE  (original position/size) ── */
@@ -303,13 +333,13 @@ export default function Login() {
                     height: 100%;
                     border-radius: 50%;
                     background: radial-gradient(circle at 35% 35%,
-                        #1a4fa8 0%, #0d2d6e 35%, #061430 70%, #020810 100%);
+                        #34d399 0%, #0f766e 32%, #065f46 62%, #022c22 100%);
                     box-shadow:
-                        0 0 0 1px rgba(100,160,255,0.2),
-                        0 0 40px 6px rgba(30,80,200,0.25),
-                        0 0 100px 20px rgba(10,40,140,0.2),
-                        inset 0 0 60px 10px rgba(0,20,80,0.6),
-                        inset -40px -30px 60px 10px rgba(0,0,30,0.7);
+                        0 0 0 1px rgba(167,243,208,0.18),
+                        0 0 40px 6px rgba(16,185,129,0.22),
+                        0 0 100px 20px rgba(4,120,87,0.18),
+                        inset 0 0 60px 10px rgba(2,44,34,0.45),
+                        inset -40px -30px 60px 10px rgba(1,24,18,0.62);
                     position: relative;
                     overflow: hidden;
                     animation: globe-float 6s ease-in-out infinite;
@@ -322,125 +352,126 @@ export default function Login() {
                     position: absolute; inset: -10%;
                     border-radius: 50%;
                     background-image:
-                        repeating-linear-gradient(0deg,  transparent, transparent 30px, rgba(120,180,255,0.07) 30px, rgba(120,180,255,0.07) 31px),
-                        repeating-linear-gradient(90deg, transparent, transparent 30px, rgba(120,180,255,0.07) 30px, rgba(120,180,255,0.07) 31px);
+                        repeating-linear-gradient(0deg,  transparent, transparent 30px, rgba(209,250,229,0.08) 30px, rgba(209,250,229,0.08) 31px),
+                        repeating-linear-gradient(90deg, transparent, transparent 30px, rgba(209,250,229,0.08) 30px, rgba(209,250,229,0.08) 31px);
                     animation: globe-spin 18s linear infinite;
                 }
                 @keyframes globe-spin {
                     0%   { transform: rotateY(0deg)   rotateX(15deg); }
                     100% { transform: rotateY(360deg) rotateX(15deg); }
                 }
-                .globe-ring { position: absolute; border-radius: 50%; border: 1px solid rgba(100,160,255,0.12); }
+                .globe-ring { position: absolute; border-radius: 50%; border: 1px solid rgba(209,250,229,0.14); }
                 .globe-ring-1 { inset: 0; }
-                .globe-ring-2 { inset: 15% 0; border-color: rgba(100,160,255,0.09); }
-                .globe-ring-3 { inset: 30% 0; border-color: rgba(100,160,255,0.07); }
-                .globe-ring-4 { inset: 0 15%; border-color: rgba(100,160,255,0.09); }
+                .globe-ring-2 { inset: 15% 0; border-color: rgba(209,250,229,0.1); }
+                .globe-ring-3 { inset: 30% 0; border-color: rgba(209,250,229,0.08); }
+                .globe-ring-4 { inset: 0 15%; border-color: rgba(209,250,229,0.1); }
                 .globe-atmo {
                     position: absolute; inset: -14px; border-radius: 50%;
-                    box-shadow: 0 0 30px 14px rgba(40,100,255,0.18), 0 0 60px 30px rgba(20,60,200,0.10);
+                    box-shadow: 0 0 30px 14px rgba(16,185,129,0.14), 0 0 60px 30px rgba(4,120,87,0.1);
                 }
                 .globe-highlight {
                     position: absolute; top:10%; left:14%; width:38%; height:30%;
-                    background: radial-gradient(ellipse, rgba(255,255,255,0.12) 0%, transparent 70%);
+                    background: radial-gradient(ellipse, rgba(255,255,255,0.18) 0%, transparent 70%);
                     border-radius: 50%;
                 }
                 .globe-orbit {
                     position: absolute; inset: -28px; border-radius: 50%;
-                    border: 1px dashed rgba(80,140,255,0.2);
+                    border: 1px dashed rgba(167,243,208,0.2);
                     animation: orbit-spin 12s linear infinite;
                 }
                 .globe-dot {
                     position: absolute; top:-5px; left:calc(50% - 5px);
                     width:10px; height:10px; border-radius:50%;
-                    background: radial-gradient(circle, #60aaff, #1a4fa8);
-                    box-shadow: 0 0 8px 3px rgba(80,160,255,0.5);
+                    background: radial-gradient(circle, #fde68a, #f59e0b);
+                    box-shadow: 0 0 8px 3px rgba(251,191,36,0.35);
                 }
                 @keyframes orbit-spin { to { transform: rotate(360deg); } }
                 .globe-orbit-2 {
                     position: absolute; inset: -50px; border-radius: 50%;
-                    border: 1px dashed rgba(80,140,255,0.1);
+                    border: 1px dashed rgba(255,255,255,0.12);
                     animation: orbit-spin 20s linear infinite reverse;
                 }
                 .globe-dot-2 {
                     position: absolute; bottom:-4px; left:calc(50% - 4px);
                     width:8px; height:8px; border-radius:50%;
-                    background: radial-gradient(circle, #a0c8ff, #2060c0);
-                    box-shadow: 0 0 6px 2px rgba(80,140,255,0.4);
+                    background: radial-gradient(circle, #d1fae5, #34d399);
+                    box-shadow: 0 0 6px 2px rgba(52,211,153,0.3);
                 }
 
                 /* ── LOGIN CARD ── */
                 .login-card {
                     position: relative; z-index: 10;
-                    background: rgba(8,18,42,0.88);
+                    background: linear-gradient(180deg, rgba(4,30,27,0.82) 0%, rgba(2,44,34,0.88) 100%);
                     backdrop-filter: blur(28px);
                     -webkit-backdrop-filter: blur(28px);
-                    border: 1px solid rgba(80,140,255,0.22);
+                    border: 1px solid rgba(255,255,255,0.12);
                     border-radius: 24px;
                     padding: 48px 48px;
                     width: 460px;
                     box-shadow:
-                        0 0 0 1px rgba(40,90,200,0.1),
-                        0 24px 80px rgba(0,0,40,0.6),
-                        0 0 40px rgba(20,60,200,0.12);
+                        0 0 0 1px rgba(4,120,87,0.12),
+                        0 24px 80px rgba(1,24,18,0.42),
+                        0 0 40px rgba(16,185,129,0.08);
                 }
                 .card-logo { display:flex; align-items:center; gap:10px; margin-bottom:22px; }
                 .card-logo-icon {
                     width:40px; height:40px; border-radius:11px;
-                    background: linear-gradient(135deg,#1a4fa8,#0d2d6e);
+                    background: linear-gradient(135deg,#047857,#0f766e);
                     display:flex; align-items:center; justify-content:center;
-                    box-shadow: 0 4px 14px rgba(26,79,168,0.5); font-size:17px;
+                    box-shadow: 0 8px 18px rgba(4,120,87,0.3); font-size:17px;
                 }
                 .card-logo-name { font-size:19px; font-weight:800; color:#fff; letter-spacing:2px; line-height:1; }
-                .card-logo-sub  { font-size:10px; font-weight:600; color:#4a80d4; letter-spacing:3px; text-transform:uppercase; }
+                .card-logo-sub  { font-size:10px; font-weight:600; color:rgba(167,243,208,0.7); letter-spacing:3px; text-transform:uppercase; }
                 .card-heading { font-size:15px; font-weight:700; color:#e0eaff; margin-bottom:3px; }
-                .card-sub     { font-size:12px; color:#4a6090; margin-bottom:26px; }
-                .field-label  { display:block; font-size:11px; font-weight:600; color:#4a7acc; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; }
+                .card-sub     { font-size:12px; color:rgba(220,252,231,0.62); margin-bottom:26px; }
+                .field-label  { display:block; font-size:11px; font-weight:600; color:rgba(167,243,208,0.76); letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; }
                 .field-wrap   { position:relative; margin-bottom:16px; }
-                .field-icon   { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#3a6090; display:flex; pointer-events:none; }
+                .field-icon   { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:rgba(167,243,208,0.42); display:flex; pointer-events:none; }
                 .field-input  {
                     width:100%; padding:11px 14px 11px 42px;
-                    background: rgba(20,40,100,0.35);
-                    border: 1px solid rgba(60,100,200,0.2);
-                    border-radius:12px; color:#e0eaff; font-size:14px;
+                    background: rgba(255,255,255,0.08);
+                    border: 1px solid rgba(255,255,255,0.12);
+                    border-radius:12px; color:#f0fdf4; font-size:14px;
                     font-family:inherit; outline:none;
                     transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
                 }
-                .field-input::placeholder { color:rgba(100,140,210,0.4); }
+                .field-input::placeholder { color:rgba(220,252,231,0.34); }
                 .field-input:focus {
-                    border-color:rgba(80,140,255,0.5); background:rgba(20,50,120,0.4);
-                    box-shadow:0 0 0 3px rgba(40,100,255,0.1);
+                    border-color:rgba(52,211,153,0.55); background:rgba(255,255,255,0.12);
+                    box-shadow:0 0 0 3px rgba(16,185,129,0.14);
                 }
                 .error-box {
-                    background:rgba(200,30,30,0.15); border:1px solid rgba(220,50,50,0.3);
-                    border-radius:10px; color:#fca5a5; font-size:12px;
+                    background:rgba(127,29,29,0.28); border:1px solid rgba(252,165,165,0.28);
+                    border-radius:10px; color:#fecaca; font-size:12px;
                     padding:10px 14px; margin-bottom:16px; text-align:center;
                 }
                 .submit-btn {
                     width:100%; padding:13px; border:none; border-radius:12px;
-                    background: linear-gradient(135deg,#1a4fa8 0%,#0d2d6e 100%);
+                    background: linear-gradient(135deg,#f8fafc 0%,#ecfdf5 100%);
                     color:white; font-size:14px; font-weight:700; font-family:inherit;
                     cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
-                    box-shadow: 0 4px 20px rgba(26,79,168,0.5), 0 0 0 1px rgba(80,140,255,0.2);
+                    color:#064e3b;
+                    box-shadow: 0 12px 26px rgba(2,86,67,0.2), 0 0 0 1px rgba(255,255,255,0.12);
                     transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
                     margin-top:4px; letter-spacing:0.5px;
                 }
                 .submit-btn:hover {
-                    background: linear-gradient(135deg,#2060c0 0%,#1335a0 100%);
-                    box-shadow: 0 6px 28px rgba(26,79,168,0.65), 0 0 0 1px rgba(80,160,255,0.35);
+                    background: linear-gradient(135deg,#ffffff 0%,#d1fae5 100%);
+                    box-shadow: 0 16px 30px rgba(2,86,67,0.26), 0 0 0 1px rgba(255,255,255,0.18);
                     transform: translateY(-1px);
                 }
                 .submit-btn:active  { transform:scale(0.97); }
                 .submit-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
-                .spinner { width:16px; height:16px; border:2px solid rgba(255,255,255,0.3); border-top-color:white; border-radius:50%; animation:btn-spin 0.6s linear infinite; }
+                .spinner { width:16px; height:16px; border:2px solid rgba(6,78,59,0.22); border-top-color:#064e3b; border-radius:50%; animation:btn-spin 0.6s linear infinite; }
                 @keyframes btn-spin { to { transform:rotate(360deg); } }
                 .card-footer {
                     display:flex; justify-content:space-between; align-items:center;
                     margin-top:18px; padding-top:18px;
-                    border-top:1px solid rgba(60,100,200,0.15);
+                    border-top:1px solid rgba(255,255,255,0.12);
                 }
-                .back-lnk { font-size:12px; font-weight:600; color:#3a6090; text-decoration:none; transition:color 0.2s; }
-                .back-lnk:hover { color:#80b0ff; }
-                .secure-badge { display:flex; align-items:center; gap:5px; font-size:11px; font-weight:600; color:#2a5090; letter-spacing:0.5px; }
+                .back-lnk { font-size:12px; font-weight:600; color:rgba(220,252,231,0.72); text-decoration:none; transition:color 0.2s; }
+                .back-lnk:hover { color:#ffffff; }
+                .secure-badge { display:flex; align-items:center; gap:5px; font-size:11px; font-weight:600; color:rgba(167,243,208,0.58); letter-spacing:0.5px; }
 
                 /* ── Responsive ── */
                 @media (max-width: 1100px) {

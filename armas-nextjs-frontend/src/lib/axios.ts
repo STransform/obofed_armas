@@ -5,6 +5,10 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 let isRedirectingToLogin = false;
 
 declare module 'axios' {
+    export interface AxiosRequestConfig<D = any> {
+        skipAuthRedirect?: boolean;
+    }
+
     export interface InternalAxiosRequestConfig {
         skipAuthRedirect?: boolean;
     }
